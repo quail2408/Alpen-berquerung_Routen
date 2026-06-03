@@ -1,0 +1,27 @@
+[
+  {
+    "id": "course-424558611",
+    "name": "E5 - Tag 1 - Oberstdorf - Kemptner Hütte",
+    "file": "routes/COURSE_424558611.gpx"
+  },
+  {
+    "id": "course-425990187",
+    "name": "E5 - Tag 3 - Memminger Huette -> Talstation Rifenalbahn",
+    "file": "routes/COURSE_425990187.gpx"
+  },
+  {
+    "id": "course-425990605-part1-before-bus",
+    "name": "E5 - Tag 4 - Zammer Alm -> Braunschweiger Huette",
+    "file": "routes/COURSE_425990605_part1_before_bus.gpx"
+  },
+  {
+    "id": "course-425990605-part2-after-bus",
+    "name": "E5 - Tag 4 - Zammer Alm -> Braunschweiger Huette",
+    "file": "routes/COURSE_425990605_part2_after_bus.gpx"
+  },
+  {
+    "id": "course-425991483",
+    "name": "E5 - Tag 6 - Martin Busch Hütte - Vernagt",
+    "file": "routes/COURSE_425991483.gpx"
+  }
+]
