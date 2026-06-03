@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GPX Map Viewer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f6f8; color: #17202a; overflow: hidden; }
+    .app { height: 100vh; display: flex; flex-direction: column; }
+    header { flex: 0 0 auto; padding: 18px 24px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-bottom: 1px solid #dde3ea; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; justify-content: space-between; z-index: 1000; box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06); }
+    .brand { display: flex; flex-direction: column; gap: 2px; }
+    h1 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.02em; }
+    .subtitle { color: #667085; font-size: 13px; }
+    .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    button, .route-link { border: 0; border-radius: 10px; padding: 10px 14px; background: #17202a; color: white; cursor: pointer; font-weight: 600; font-size: inherit; line-height: normal; min-height: 40px; text-decoration: none; display: inline-flex; align-items: center; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:not(:disabled):hover, .route-link:hover { background: #263445; }
+    main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+    .map-wrap { min-width: 0; min-height: 0; position: relative; }
+    #map { position: absolute; inset: 0; width: 100%; height: 100%; background: #dbeafe; }
+    aside { min-height: 0; background: #ffffff; border-left: 1px solid #dde3ea; padding: 18px; overflow: auto; }
+    .card { border: 1px solid #dde3ea; border-radius: 14px; padding: 14px; margin-bottom: 14px; background: #fff; }
+    .label { color: #667085; font-size: 13px; margin-bottom: 4px; }
+    .value { font-size: 18px; font-weight: 700; word-break: break-word; }
+    .hint { color: #667085; line-height: 1.5; font-size: 14px; }
+    .error { color: #b42318; font-weight: 600; }
+    #heightProfile { width: 100%; height: 160px; margin-top: 12px; border: 1px solid #dde3ea; border-radius: 12px; overflow: hidden; background: #f8fafc; }
+    #heightProfile svg { display: block; width: 100%; height: 100%; }
+    .profile-empty { display: flex; align-items: center; justify-content: center; padding: 12px; color: #667085; font-size: 13px; text-align: center; }
+    .route-summary-empty { color: #667085; font-size: 14px; }
+    .route-summary-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; word-break: break-word; }
+    .route-summary-metrics { color: #667085; font-size: 14px; line-height: 1.6; }
+    .route-item { border-top: 1px solid #eef2f6; padding-top: 12px; margin-top: 12px; }
+    .route-item:first-of-type { border-top: 0; padding-top: 0; }
+    .route-item a { color: #17202a; font-weight: 700; text-decoration: none; }
+    .route-item a:hover { text-decoration: underline; }
+    .hut-icon { background: transparent; border: 0; }
+    .hut-icon-inner { width: 30px; height: 30px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: #92400e; color: #ffffff; border: 3px solid #ffffff; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.35); font-size: 22px; line-height: 1; font-weight: 700; }
+    @media (max-width: 850px) {
+      body { overflow: auto; }
+      .app { min-height: 100vh; height: auto; }
+      main { grid-template-columns: 1fr; grid-template-rows: 65vh auto; }
+      aside { border-left: 0; border-top: 1px solid #dde3ea; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>GPX Map Viewer</h1>
+        <div class="subtitle">Static GPX routes from this GitHub Pages site.</div>
+      </div>
+      <div class="controls">
+        <a id="allRoutesLink" class="route-link" href="./">All routes</a>
+        <button id="toggleHutsBtn">Hide huts</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="map-wrap"><div id="map"></div></div>
+      <aside>
+        <div class="card">
+          <div class="label">Routes summary</div>
+          <div id="routeSummaryList" class="route-summary-empty">Loading routes...</div>
+        </div>
+        <div class="card">
+          <div class="label">Selected route</div>
+          <div id="hoverName" class="value">None</div>
+          <p class="hint">
+            Distance: <strong id="hoverDistance">-</strong><br>
+            Elevation gain: <strong id="hoverElevation">-</strong><br>
+            Elevation loss: <strong id="hoverLoss">-</strong><br>
+            Estimated hiking time: <strong id="hoverTime">-</strong>
+          </p>
+          <div id="heightProfile" class="profile-empty">No height profile selected</div>
+        </div>
+        <p id="status" class="hint">Loading GPX files from the routes folder.</p>
+      </aside>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const toggleHutsBtn = document.getElementById("toggleHutsBtn");
+    const allRoutesLink = document.getElementById("allRoutesLink");
+    const routeSummaryListEl = document.getElementById("routeSummaryList");
+    const hoverNameEl = document.getElementById("hoverName");
+    const hoverDistanceEl = document.getElementById("hoverDistance");
+    const hoverElevationEl = document.getElementById("hoverElevation");
+    const hoverLossEl = document.getElementById("hoverLoss");
+    const hoverTimeEl = document.getElementById("hoverTime");
+    const heightProfileEl = document.getElementById("heightProfile");
+    const statusEl = document.getElementById("status");
+
+    const routeColors = ["#e11d48", "#2563eb", "#16a34a", "#f97316", "#7c3aed", "#0891b2", "#be123c", "#4d7c0f"];
+    let allRouteDefinitions = [];
+    let loadedRoutes = [];
+    let routeFeatureGroup = null;
+    let hutsVisible = true;
+    let hutLayerGroup = null;
+
+    const selectedRouteId = new URLSearchParams(window.location.search).get("route");
+
+    const map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([51.1657, 10.4515], 6);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    routeFeatureGroup = L.featureGroup().addTo(map);
+
+    map.createPane("hutPane");
+    map.getPane("hutPane").style.zIndex = 700;
+    map.getPane("hutPane").style.pointerEvents = "auto";
+    hutLayerGroup = L.layerGroup().addTo(map);
+
+    const hutIcon = L.divIcon({ className: "hut-icon", html: `<div class="hut-icon-inner" aria-hidden="true">⌂</div>`, iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -16] });
+    const huts = [
+      { name: "Kemptner Hütte", lat: 47.313333, lon: 10.327778, elevation: "1,844 m", website: "https://www.kemptner-huette.de/" },
+      { name: "Memminger Hütte", lat: 47.200556, lon: 10.478611, elevation: "2,242 m", website: "https://www.memmingerhuette.at/" },
+      { name: "Zammer Alm", lat: 47.15372, lon: 10.6217, elevation: "1,775 m", website: "https://www.zammer-alm.at/" },
+      { name: "Braunschweiger Hütte", lat: 46.935278, lon: 10.909167, elevation: "2,759 m", website: "https://www.braunschweiger-huette.at/" },
+      { name: "Martin-Busch-Hütte", lat: 46.801111, lon: 10.886944, elevation: "2,501 m", website: "https://dav-berlin.de/huetten-ueberblick-anfahrt/oetztal/martin-busch-huette/" },
+      { name: "Gasthof Neuratheis", lat: 46.68471145629883, lon: 10.932781219482422, elevation: "Katharinaberg 40", website: "https://www.booking.com/hotel/it/gasthof-neuratheis.de.html" }
+    ];
+
+    addHutMarkers();
+    loadRoutesFromManifest();
+    setTimeout(() => map.invalidateSize(), 0);
+    window.addEventListener("resize", () => map.invalidateSize());
+
+    toggleHutsBtn.addEventListener("click", () => {
+      hutsVisible = !hutsVisible;
+      if (hutsVisible) { hutLayerGroup.addTo(map); toggleHutsBtn.textContent = "Hide huts"; }
+      else { map.removeLayer(hutLayerGroup); toggleHutsBtn.textContent = "Show huts"; }
+    });
+
+    async function loadRoutesFromManifest() {
+      try {
+        const manifestResponse = await fetch("routes/routes.json", { cache: "no-cache" });
+        if (!manifestResponse.ok) throw new Error(`Could not load routes/routes.json (${manifestResponse.status})`);
+        allRouteDefinitions = await manifestResponse.json();
+
+        const routeDefinitionsToShow = selectedRouteId
+          ? allRouteDefinitions.filter((route) => route.id === selectedRouteId)
+          : allRouteDefinitions;
+
+        if (routeDefinitionsToShow.length === 0) throw new Error(`No route found for id "${selectedRouteId}"`);
+
+        const failedRoutes = [];
+        for (let i = 0; i < routeDefinitionsToShow.length; i++) {
+          const routeDefinition = routeDefinitionsToShow[i];
+          try {
+            const response = await fetch(routeDefinition.file, { cache: "no-cache" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const text = await response.text();
+            const points = parseGpx(text);
+            if (points.length < 2) throw new Error("not enough track or route coordinates");
+            addRoute(routeDefinition, points, i);
+          } catch (error) {
+            failedRoutes.push(`${routeDefinition.name}: ${error.message}`);
+          }
+        }
+
+        if (loadedRoutes.length === 0) throw new Error(failedRoutes.length ? failedRoutes.join("; ") : "No routes loaded");
+
+        fitAllRoutes();
+        updateRouteSummaryList();
+        if (selectedRouteId && loadedRoutes[0]) showHoveredRoute(loadedRoutes[0]);
+        setStatus(failedRoutes.length ? `Loaded ${loadedRoutes.length} route(s). Failed: ${failedRoutes.join("; ")}` : `Loaded ${loadedRoutes.length} route(s).`, failedRoutes.length > 0);
+      } catch (error) {
+        setStatus(error.message, true);
+        routeSummaryListEl.className = "route-summary-empty";
+        routeSummaryListEl.textContent = "No GPX loaded";
+      }
+    }
+
+    function addHutMarkers() {
+      hutLayerGroup.clearLayers();
+      huts.forEach((hut) => {
+        L.marker([hut.lat, hut.lon], { pane: "hutPane", icon: hutIcon, keyboard: true, title: hut.name })
+          .bindTooltip(hut.name, { direction: "top", offset: [0, -8] })
+          .bindPopup(`<strong>${escapeHtml(hut.name)}</strong><br>Elevation: ${escapeHtml(hut.elevation)}<br><a href="${escapeHtml(hut.website)}" target="_blank" rel="noopener noreferrer">Open website</a>`)
+          .addTo(hutLayerGroup);
+      });
+    }
+
+    function parseGpx(gpxText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(gpxText, "application/xml");
+      if (xml.querySelector("parsererror")) throw new Error("This file could not be parsed as valid GPX/XML.");
+      const trackPoints = getPointsByTagName(xml, "trkpt");
+      const routePoints = getPointsByTagName(xml, "rtept");
+      const waypointPoints = getPointsByTagName(xml, "wpt");
+      if (trackPoints.length >= 2) return trackPoints;
+      if (routePoints.length >= 2) return routePoints;
+      return waypointPoints;
+    }
+
+    function getPointsByTagName(xml, tagName) {
+      return Array.from(xml.getElementsByTagNameNS("*", tagName)).map((node) => {
+        const lat = Number(node.getAttribute("lat"));
+        const lon = Number(node.getAttribute("lon"));
+        const elevationNode = node.getElementsByTagNameNS("*", "ele")[0];
+        const elevation = elevationNode ? Number(elevationNode.textContent) : null;
+        return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon, elevation: Number.isFinite(elevation) ? elevation : null } : null;
+      }).filter(Boolean);
+    }
+
+    function addRoute(routeDefinition, points, routeIndex) {
+      map.invalidateSize();
+      const color = routeColors[routeIndex % routeColors.length];
+      const latLngs = points.map((point) => L.latLng(point.lat, point.lon));
+      const distanceKm = calculateDistanceKm(points);
+      const elevationGainM = calculateElevationGainM(points);
+      const elevationLossM = calculateElevationLossM(points);
+      const profilePoints = buildElevationProfile(points);
+      const hikingTimeHours = estimateHikingTimeHours(distanceKm, elevationGainM);
+      const route = { id: routeDefinition.id, name: routeDefinition.name, file: routeDefinition.file, points, distanceKm, elevationGainM, elevationLossM, profilePoints, hikingTimeHours, color };
+
+      const routeLayer = L.polyline(latLngs, { color, weight: selectedRouteId ? 7 : 6, opacity: 1, lineCap: "round", lineJoin: "round" })
+        .bindPopup(`${escapeHtml(route.name)}<br>${distanceKm.toFixed(2)} km<br>${Math.round(elevationGainM)} m gain<br>${Math.round(elevationLossM)} m loss<br>${formatHours(hikingTimeHours)}<br><a href="?route=${encodeURIComponent(route.id)}">Open only this route</a>`);
+
+      routeLayer.on("click", () => { window.location.href = `?route=${encodeURIComponent(route.id)}`; });
+      routeLayer.on("mouseover", () => { routeLayer.setStyle({ weight: 9 }); showHoveredRoute(route); });
+      routeLayer.on("mousemove", (event) => { routeLayer.setStyle({ weight: 9 }); showHoveredRoute(route, findNearestProfilePoint(route, event.latlng)); });
+      routeLayer.on("mouseout", () => { routeLayer.setStyle({ weight: selectedRouteId ? 7 : 6 }); if (!selectedRouteId) clearHoveredRoute(); });
+
+      const startMarker = L.circleMarker(latLngs[0], { radius: 6, color, fillColor: color, fillOpacity: 1, weight: 3 }).bindPopup(`${escapeHtml(route.name)}<br>Start`);
+      const finishMarker = L.circleMarker(latLngs[latLngs.length - 1], { radius: 6, color, fillColor: "#ffffff", fillOpacity: 1, weight: 3 }).bindPopup(`${escapeHtml(route.name)}<br>Finish`);
+      routeFeatureGroup.addLayer(routeLayer);
+      routeFeatureGroup.addLayer(startMarker);
+      routeFeatureGroup.addLayer(finishMarker);
+      loadedRoutes.push(route);
+    }
+
+    function fitAllRoutes() {
+      map.invalidateSize();
+      if (!routeFeatureGroup || routeFeatureGroup.getLayers().length === 0) return;
+      const bounds = routeFeatureGroup.getBounds();
+      if (bounds.isValid()) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 }); setTimeout(() => map.invalidateSize(), 100); }
+    }
+
+    function updateRouteSummaryList() {
+      if (loadedRoutes.length === 0) { routeSummaryListEl.className = "route-summary-empty"; routeSummaryListEl.textContent = "No GPX loaded"; return; }
+      const totals = loadedRoutes.reduce((summary, route) => {
+        summary.distanceKm += route.distanceKm; summary.elevationGainM += route.elevationGainM; summary.elevationLossM += route.elevationLossM; summary.hikingTimeHours += route.hikingTimeHours; return summary;
+      }, { distanceKm: 0, elevationGainM: 0, elevationLossM: 0, hikingTimeHours: 0 });
+      const routeLinks = loadedRoutes.map((route) => `
+        <div class="route-item">
+          <a href="?route=${encodeURIComponent(route.id)}"><span style="color:${route.color}">●</span> ${escapeHtml(route.name)}</a><br>
+          <span class="route-summary-metrics">${route.distanceKm.toFixed(2)} km · ${Math.round(route.elevationGainM).toLocaleString()} m gain · ${formatHours(route.hikingTimeHours)}</span>
+        </div>
+      `).join("");
+      routeSummaryListEl.className = "";
+      routeSummaryListEl.innerHTML = `
+        <div class="route-summary-title">${selectedRouteId ? "Single route" : `${loadedRoutes.length} route${loadedRoutes.length === 1 ? "" : "s"} loaded`}</div>
+        <div class="route-summary-metrics">
+          Total distance: <strong>${totals.distanceKm.toFixed(2)} km</strong><br>
+          Total elevation gain: <strong>${Math.round(totals.elevationGainM).toLocaleString()} m</strong><br>
+          Total elevation loss: <strong>${Math.round(totals.elevationLossM).toLocaleString()} m</strong><br>
+          Total estimated hiking time: <strong>${formatHours(totals.hikingTimeHours)}</strong>
+        </div>
+        ${routeLinks}
+      `;
+    }
+
+    function showHoveredRoute(route, activePoint = null) {
+      hoverNameEl.innerHTML = `<span style="color:${route.color}">●</span> ${escapeHtml(route.name)}`;
+      hoverDistanceEl.textContent = `${route.distanceKm.toFixed(2)} km`;
+      hoverElevationEl.textContent = `${Math.round(route.elevationGainM).toLocaleString()} m`;
+      hoverLossEl.textContent = `${Math.round(route.elevationLossM).toLocaleString()} m`;
+      hoverTimeEl.textContent = formatHours(route.hikingTimeHours);
+      renderHeightProfile(route, activePoint);
+    }
+
+    function clearHoveredRoute() {
+      hoverNameEl.textContent = "None"; hoverDistanceEl.textContent = "-"; hoverElevationEl.textContent = "-"; hoverLossEl.textContent = "-"; hoverTimeEl.textContent = "-";
+      heightProfileEl.className = "profile-empty"; heightProfileEl.textContent = "No height profile selected";
+    }
+
+    function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
+    function calculateDistanceKm(points) { let total = 0; for (let i = 1; i < points.length; i++) total += haversineKm(points[i - 1], points[i]); return total; }
+    function calculateElevationGainM(points) { let gain = 0; for (let i = 1; i < points.length; i++) { const a = points[i - 1].elevation; const b = points[i].elevation; if (Number.isFinite(a) && Number.isFinite(b) && b > a) gain += b - a; } return gain; }
+    function calculateElevationLossM(points) { let loss = 0; for (let i = 1; i < points.length; i++) { const a = points[i - 1].elevation; const b = points[i].elevation; if (Number.isFinite(a) && Number.isFinite(b) && b < a) loss += Math.abs(b - a); } return loss; }
+    function buildElevationProfile(points) { const profile = []; let distanceKm = 0; for (let i = 0; i < points.length; i++) { if (i > 0) distanceKm += haversineKm(points[i - 1], points[i]); if (Number.isFinite(points[i].elevation)) profile.push({ distanceKm, elevation: points[i].elevation, lat: points[i].lat, lon: points[i].lon }); } return profile; }
+    function findNearestProfilePoint(route, latlng) { let bestPoint = null; let bestDistance = Infinity; for (const point of route.profilePoints) { const distance = map.distance(latlng, L.latLng(point.lat, point.lon)); if (distance < bestDistance) { bestDistance = distance; bestPoint = point; } } return bestPoint; }
+
+    function renderHeightProfile(route, activePoint = null) {
+      const profile = route.profilePoints;
+      if (!profile || profile.length < 2) { heightProfileEl.className = "profile-empty"; heightProfileEl.textContent = "No elevation data in this GPX file"; return; }
+      const width = 280, height = 140, padding = { top: 14, right: 12, bottom: 26, left: 42 };
+      const minElevation = Math.min(...profile.map((p) => p.elevation));
+      const maxElevation = Math.max(...profile.map((p) => p.elevation));
+      const maxDistance = Math.max(...profile.map((p) => p.distanceKm));
+      const elevationRange = Math.max(1, maxElevation - minElevation);
+      const safeMaxDistance = Math.max(0.001, maxDistance);
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+      const linePoints = profile.map((point) => `${(padding.left + (point.distanceKm / safeMaxDistance) * plotWidth).toFixed(1)},${(padding.top + ((maxElevation - point.elevation) / elevationRange) * plotHeight).toFixed(1)}`).join(" ");
+      let activeMarkerSvg = "";
+      if (activePoint) {
+        const activeX = padding.left + (activePoint.distanceKm / safeMaxDistance) * plotWidth;
+        const activeY = padding.top + ((maxElevation - activePoint.elevation) / elevationRange) * plotHeight;
+        activeMarkerSvg = `<line x1="${activeX}" y1="${padding.top}" x2="${activeX}" y2="${height - padding.bottom}" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="4 3"></line><circle cx="${activeX}" cy="${activeY}" r="4" fill="#0f172a"></circle><text x="${activeX}" y="${padding.top + 10}" text-anchor="middle" font-size="10" fill="#0f172a">${Math.round(activePoint.elevation)} m</text>`;
+      }
+      const areaPoints = `${padding.left},${height - padding.bottom} ${linePoints} ${width - padding.right},${height - padding.bottom}`;
+      heightProfileEl.className = "";
+      heightProfileEl.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Height profile for ${escapeHtml(route.name)}"><rect x="0" y="0" width="${width}" height="${height}" fill="#f8fafc"></rect><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line><line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line><polygon points="${areaPoints}" fill="${route.color}" opacity="0.16"></polygon><polyline points="${linePoints}" fill="none" stroke="${route.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>${activeMarkerSvg}<text x="${padding.left - 6}" y="${padding.top + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(maxElevation)} m</text><text x="${padding.left - 6}" y="${height - padding.bottom + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(minElevation)} m</text><text x="${padding.left}" y="${height - 8}" text-anchor="start" font-size="10" fill="#475569">0 km</text><text x="${width - padding.right}" y="${height - 8}" text-anchor="end" font-size="10" fill="#475569">${route.distanceKm.toFixed(1)} km</text></svg>`;
+    }
+
+    function estimateHikingTimeHours(distanceKm, elevationGainM) { return distanceKm / 5 + elevationGainM / 600; }
+    function formatHours(hours) { if (!Number.isFinite(hours) || hours <= 0) return "-"; const totalMinutes = Math.round(hours * 60); const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; if (h === 0) return `${m} min`; if (m === 0) return `${h} h`; return `${h} h ${m} min`; }
+    function haversineKm(a, b) { const radiusKm = 6371; const dLat = toRad(b.lat - a.lat); const dLon = toRad(b.lon - a.lon); const lat1 = toRad(a.lat); const lat2 = toRad(b.lat); const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2; return 2 * radiusKm * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)); }
+    function toRad(degrees) { return degrees * Math.PI / 180; }
+    function setStatus(message, isError = false) { statusEl.textContent = message; statusEl.className = isError ? "hint error" : "hint"; }
+  </script>
+</body>
+</html>
