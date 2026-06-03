@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -52,7 +52,7 @@
     <header>
       <div class="brand">
         <h1>Alpenüberquerung E5 - 2026</h1>
-        <div class="subtitle">kleiner Überblick über die Routen</div>
+        <div class="subtitle">Kleiner Überblick über die Routen</div>
       </div>
       <div class="controls">
         <a id="allRoutesLink" class="route-link" href="./">Alle Routen</a>
@@ -64,21 +64,25 @@
       <div class="map-wrap"><div id="map"></div></div>
       <aside>
         <div class="card">
-          <div class="label">Routen Zusammenfassung</div>
-          <div id="routeSummaryList" class="route-summary-empty">Lade Routen...</div>
+          <div class="label">Gesamtübersicht</div>
+          <div id="totalSummary" class="route-summary-empty">Lade Routen...</div>
         </div>
         <div class="card">
           <div class="label">Ausgewählte Route</div>
-          <div id="hoverName" class="value">None</div>
+          <div id="hoverName" class="value">Keine</div>
           <p class="hint">
             Distanz: <strong id="hoverDistance">-</strong><br>
-            Höhenmeter (hoch): <strong id="hoverElevation">-</strong><br>
-            Höhenmeter (runter): <strong id="hoverLoss">-</strong><br>
+            Höhenmeter bergauf: <strong id="hoverElevation">-</strong><br>
+            Höhenmeter bergab: <strong id="hoverLoss">-</strong><br>
             Wanderdauer (Schätzung): <strong id="hoverTime">-</strong>
           </p>
           <div id="heightProfile" class="profile-empty">Kein Höhenprofil ausgewählt</div>
         </div>
-        <p id="status" class="hint">Lade GPX Daten...</p>
+        <div class="card">
+          <div class="label">Geladene Routen</div>
+          <div id="routeList" class="route-summary-empty">Lade Routen...</div>
+        </div>
+        <p id="status" class="hint">Lade GPX-Daten...</p>
       </aside>
     </main>
   </div>
@@ -87,7 +91,8 @@
   <script>
     const toggleHutsBtn = document.getElementById("toggleHutsBtn");
     const allRoutesLink = document.getElementById("allRoutesLink");
-    const routeSummaryListEl = document.getElementById("routeSummaryList");
+    const totalSummaryEl = document.getElementById("totalSummary");
+    const routeListEl = document.getElementById("routeList");
     const hoverNameEl = document.getElementById("hoverName");
     const hoverDistanceEl = document.getElementById("hoverDistance");
     const hoverElevationEl = document.getElementById("hoverElevation");
@@ -106,7 +111,7 @@
     const selectedRouteId = new URLSearchParams(window.location.search).get("route");
 
     const map = L.map("map", { zoomControl: true, preferCanvas: true }).setView([51.1657, 10.4515], 6);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap-Mitwirkende" }).addTo(map);
     routeFeatureGroup = L.featureGroup().addTo(map);
 
     map.createPane("hutPane");
@@ -116,11 +121,11 @@
 
     const hutIcon = L.divIcon({ className: "hut-icon", html: `<div class="hut-icon-inner" aria-hidden="true">⌂</div>`, iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -16] });
     const huts = [
-      { name: "Kemptner Hütte", lat: 47.313333, lon: 10.327778, elevation: "1,844 m", website: "https://www.kemptner-huette.de/" },
-      { name: "Memminger Hütte", lat: 47.200556, lon: 10.478611, elevation: "2,242 m", website: "https://www.memmingerhuette.at/" },
-      { name: "Zammer Alm", lat: 47.15372, lon: 10.6217, elevation: "1,775 m", website: "https://www.zammer-alm.at/" },
-      { name: "Braunschweiger Hütte", lat: 46.935278, lon: 10.909167, elevation: "2,759 m", website: "https://www.braunschweiger-huette.at/" },
-      { name: "Martin-Busch-Hütte", lat: 46.801111, lon: 10.886944, elevation: "2,501 m", website: "https://dav-berlin.de/huetten-ueberblick-anfahrt/oetztal/martin-busch-huette/" },
+      { name: "Kemptner Hütte", lat: 47.313333, lon: 10.327778, elevation: "1.844 m", website: "https://www.kemptner-huette.de/" },
+      { name: "Memminger Hütte", lat: 47.200556, lon: 10.478611, elevation: "2.242 m", website: "https://www.memmingerhuette.at/" },
+      { name: "Zammer Alm", lat: 47.15372, lon: 10.6217, elevation: "1.775 m", website: "https://www.zammer-alm.at/" },
+      { name: "Braunschweiger Hütte", lat: 46.935278, lon: 10.909167, elevation: "2.759 m", website: "https://www.braunschweiger-huette.at/" },
+      { name: "Martin-Busch-Hütte", lat: 46.801111, lon: 10.886944, elevation: "2.501 m", website: "https://dav-berlin.de/huetten-ueberblick-anfahrt/oetztal/martin-busch-huette/" },
       { name: "Gasthof Neuratheis", lat: 46.68471145629883, lon: 10.932781219482422, elevation: "Katharinaberg 40", website: "https://www.booking.com/hotel/it/gasthof-neuratheis.de.html" }
     ];
 
@@ -138,14 +143,14 @@
     async function loadRoutesFromManifest() {
       try {
         const manifestResponse = await fetch("routes/routes.json", { cache: "no-cache" });
-        if (!manifestResponse.ok) throw new Error(`Could not load routes/routes.json (${manifestResponse.status})`);
+        if (!manifestResponse.ok) throw new Error(`routes/routes.json konnte nicht geladen werden (${manifestResponse.status})`);
         allRouteDefinitions = await manifestResponse.json();
 
         const routeDefinitionsToShow = selectedRouteId
           ? allRouteDefinitions.filter((route) => route.id === selectedRouteId)
           : allRouteDefinitions;
 
-        if (routeDefinitionsToShow.length === 0) throw new Error(`No route found for id "${selectedRouteId}"`);
+        if (routeDefinitionsToShow.length === 0) throw new Error(`Keine Route mit der ID "${selectedRouteId}" gefunden`);
 
         const failedRoutes = [];
         for (let i = 0; i < routeDefinitionsToShow.length; i++) {
@@ -155,23 +160,25 @@
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const text = await response.text();
             const points = parseGpx(text);
-            if (points.length < 2) throw new Error("not enough track or route coordinates");
+            if (points.length < 2) throw new Error("nicht genügend Track- oder Routenkoordinaten");
             addRoute(routeDefinition, points, i);
           } catch (error) {
             failedRoutes.push(`${routeDefinition.name}: ${error.message}`);
           }
         }
 
-        if (loadedRoutes.length === 0) throw new Error(failedRoutes.length ? failedRoutes.join("; ") : "No routes loaded");
+        if (loadedRoutes.length === 0) throw new Error(failedRoutes.length ? failedRoutes.join("; ") : "Keine Routen geladen");
 
         fitAllRoutes();
-        updateRouteSummaryList();
+        updateRouteOverview();
         if (selectedRouteId && loadedRoutes[0]) showHoveredRoute(loadedRoutes[0]);
-        setStatus(failedRoutes.length ? `Loaded ${loadedRoutes.length} route(s). Failed: ${failedRoutes.join("; ")}` : `Loaded ${loadedRoutes.length} route(s).`, failedRoutes.length > 0);
+        setStatus(failedRoutes.length ? `${loadedRoutes.length} Route(n) geladen. Fehlgeschlagen: ${failedRoutes.join("; ")}` : `${loadedRoutes.length} Route(n) geladen.`, failedRoutes.length > 0);
       } catch (error) {
         setStatus(error.message, true);
-        routeSummaryListEl.className = "route-summary-empty";
-        routeSummaryListEl.textContent = "No GPX loaded";
+        totalSummaryEl.className = "route-summary-empty";
+        totalSummaryEl.textContent = "Keine GPX-Daten geladen";
+        routeListEl.className = "route-summary-empty";
+        routeListEl.textContent = "Keine GPX-Daten geladen";
       }
     }
 
@@ -180,7 +187,7 @@
       huts.forEach((hut) => {
         L.marker([hut.lat, hut.lon], { pane: "hutPane", icon: hutIcon, keyboard: true, title: hut.name })
           .bindTooltip(hut.name, { direction: "top", offset: [0, -8] })
-          .bindPopup(`<strong>${escapeHtml(hut.name)}</strong><br>Elevation: ${escapeHtml(hut.elevation)}<br><a href="${escapeHtml(hut.website)}" target="_blank" rel="noopener noreferrer">Open website</a>`)
+          .bindPopup(`<strong>${escapeHtml(hut.name)}</strong><br>Höhe: ${escapeHtml(hut.elevation)}<br><a href="${escapeHtml(hut.website)}" target="_blank" rel="noopener noreferrer">Website öffnen</a>`)
           .addTo(hutLayerGroup);
       });
     }
@@ -188,7 +195,7 @@
     function parseGpx(gpxText) {
       const parser = new DOMParser();
       const xml = parser.parseFromString(gpxText, "application/xml");
-      if (xml.querySelector("parsererror")) throw new Error("This file could not be parsed as valid GPX/XML.");
+      if (xml.querySelector("parsererror")) throw new Error("Diese Datei konnte nicht als gültige GPX-/XML-Datei gelesen werden.");
       const trackPoints = getPointsByTagName(xml, "trkpt");
       const routePoints = getPointsByTagName(xml, "rtept");
       const waypointPoints = getPointsByTagName(xml, "wpt");
@@ -219,7 +226,7 @@
       const route = { id: routeDefinition.id, name: routeDefinition.name, file: routeDefinition.file, points, distanceKm, elevationGainM, elevationLossM, profilePoints, hikingTimeHours, color };
 
       const routeLayer = L.polyline(latLngs, { color, weight: selectedRouteId ? 7 : 6, opacity: 1, lineCap: "round", lineJoin: "round" })
-        .bindPopup(`${escapeHtml(route.name)}<br>${distanceKm.toFixed(2)} km<br>${Math.round(elevationGainM)} m gain<br>${Math.round(elevationLossM)} m loss<br>${formatHours(hikingTimeHours)}<br><a href="?route=${encodeURIComponent(route.id)}">Open only this route</a>`);
+        .bindPopup(`${escapeHtml(route.name)}<br>${distanceKm.toFixed(2)} km<br>${Math.round(elevationGainM)} m bergauf<br>${Math.round(elevationLossM)} m bergab<br>${formatHours(hikingTimeHours)}<br><a href="?route=${encodeURIComponent(route.id)}">Nur diese Route öffnen</a>`);
 
       routeLayer.on("click", () => { window.location.href = `?route=${encodeURIComponent(route.id)}`; });
       routeLayer.on("mouseover", () => { routeLayer.setStyle({ weight: 9 }); showHoveredRoute(route); });
@@ -227,7 +234,7 @@
       routeLayer.on("mouseout", () => { routeLayer.setStyle({ weight: selectedRouteId ? 7 : 6 }); if (!selectedRouteId) clearHoveredRoute(); });
 
       const startMarker = L.circleMarker(latLngs[0], { radius: 6, color, fillColor: color, fillOpacity: 1, weight: 3 }).bindPopup(`${escapeHtml(route.name)}<br>Start`);
-      const finishMarker = L.circleMarker(latLngs[latLngs.length - 1], { radius: 6, color, fillColor: "#ffffff", fillOpacity: 1, weight: 3 }).bindPopup(`${escapeHtml(route.name)}<br>Finish`);
+      const finishMarker = L.circleMarker(latLngs[latLngs.length - 1], { radius: 6, color, fillColor: "#ffffff", fillOpacity: 1, weight: 3 }).bindPopup(`${escapeHtml(route.name)}<br>Ziel`);
       routeFeatureGroup.addLayer(routeLayer);
       routeFeatureGroup.addLayer(startMarker);
       routeFeatureGroup.addLayer(finishMarker);
@@ -241,42 +248,60 @@
       if (bounds.isValid()) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 }); setTimeout(() => map.invalidateSize(), 100); }
     }
 
-    function updateRouteSummaryList() {
-      if (loadedRoutes.length === 0) { routeSummaryListEl.className = "route-summary-empty"; routeSummaryListEl.textContent = "No GPX loaded"; return; }
+    function updateRouteOverview() {
+      if (loadedRoutes.length === 0) {
+        totalSummaryEl.className = "route-summary-empty";
+        totalSummaryEl.textContent = "Keine GPX-Daten geladen";
+        routeListEl.className = "route-summary-empty";
+        routeListEl.textContent = "Keine GPX-Daten geladen";
+        return;
+      }
+
       const totals = loadedRoutes.reduce((summary, route) => {
-        summary.distanceKm += route.distanceKm; summary.elevationGainM += route.elevationGainM; summary.elevationLossM += route.elevationLossM; summary.hikingTimeHours += route.hikingTimeHours; return summary;
+        summary.distanceKm += route.distanceKm;
+        summary.elevationGainM += route.elevationGainM;
+        summary.elevationLossM += route.elevationLossM;
+        summary.hikingTimeHours += route.hikingTimeHours;
+        return summary;
       }, { distanceKm: 0, elevationGainM: 0, elevationLossM: 0, hikingTimeHours: 0 });
-      const routeLinks = loadedRoutes.map((route) => `
+
+      totalSummaryEl.className = "";
+      totalSummaryEl.innerHTML = `
+        <div class="route-summary-title">${selectedRouteId ? "Einzelroute" : `${loadedRoutes.length} Route${loadedRoutes.length === 1 ? "" : "n"} geladen`}</div>
+        <div class="route-summary-metrics">
+          Gesamtdistanz: <strong>${totals.distanceKm.toFixed(2)} km</strong><br>
+          Höhenmeter bergauf gesamt: <strong>${Math.round(totals.elevationGainM).toLocaleString("de-DE")} m</strong><br>
+          Höhenmeter bergab gesamt: <strong>${Math.round(totals.elevationLossM).toLocaleString("de-DE")} m</strong><br>
+          Geschätzte Gehzeit gesamt: <strong>${formatHours(totals.hikingTimeHours)}</strong>
+        </div>
+      `;
+
+      routeListEl.className = "";
+      routeListEl.innerHTML = loadedRoutes.map((route) => `
         <div class="route-item">
           <a href="?route=${encodeURIComponent(route.id)}"><span style="color:${route.color}">●</span> ${escapeHtml(route.name)}</a><br>
-          <span class="route-summary-metrics">${route.distanceKm.toFixed(2)} km · ${Math.round(route.elevationGainM).toLocaleString()} m gain · ${formatHours(route.hikingTimeHours)}</span>
+          <span class="route-summary-metrics">${route.distanceKm.toFixed(2)} km · ${Math.round(route.elevationGainM).toLocaleString("de-DE")} m bergauf · ${formatHours(route.hikingTimeHours)}</span>
         </div>
       `).join("");
-      routeSummaryListEl.className = "";
-      routeSummaryListEl.innerHTML = `
-        <div class="route-summary-title">${selectedRouteId ? "Single route" : `${loadedRoutes.length} route${loadedRoutes.length === 1 ? "" : "s"} loaded`}</div>
-        <div class="route-summary-metrics">
-          Total distance: <strong>${totals.distanceKm.toFixed(2)} km</strong><br>
-          Total elevation gain: <strong>${Math.round(totals.elevationGainM).toLocaleString()} m</strong><br>
-          Total elevation loss: <strong>${Math.round(totals.elevationLossM).toLocaleString()} m</strong><br>
-          Total estimated hiking time: <strong>${formatHours(totals.hikingTimeHours)}</strong>
-        </div>
-        ${routeLinks}
-      `;
     }
 
     function showHoveredRoute(route, activePoint = null) {
       hoverNameEl.innerHTML = `<span style="color:${route.color}">●</span> ${escapeHtml(route.name)}`;
       hoverDistanceEl.textContent = `${route.distanceKm.toFixed(2)} km`;
-      hoverElevationEl.textContent = `${Math.round(route.elevationGainM).toLocaleString()} m`;
-      hoverLossEl.textContent = `${Math.round(route.elevationLossM).toLocaleString()} m`;
+      hoverElevationEl.textContent = `${Math.round(route.elevationGainM).toLocaleString("de-DE")} m`;
+      hoverLossEl.textContent = `${Math.round(route.elevationLossM).toLocaleString("de-DE")} m`;
       hoverTimeEl.textContent = formatHours(route.hikingTimeHours);
       renderHeightProfile(route, activePoint);
     }
 
     function clearHoveredRoute() {
-      hoverNameEl.textContent = "None"; hoverDistanceEl.textContent = "-"; hoverElevationEl.textContent = "-"; hoverLossEl.textContent = "-"; hoverTimeEl.textContent = "-";
-      heightProfileEl.className = "profile-empty"; heightProfileEl.textContent = "No height profile selected";
+      hoverNameEl.textContent = "Keine";
+      hoverDistanceEl.textContent = "-";
+      hoverElevationEl.textContent = "-";
+      hoverLossEl.textContent = "-";
+      hoverTimeEl.textContent = "-";
+      heightProfileEl.className = "profile-empty";
+      heightProfileEl.textContent = "Kein Höhenprofil ausgewählt";
     }
 
     function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
@@ -288,7 +313,7 @@
 
     function renderHeightProfile(route, activePoint = null) {
       const profile = route.profilePoints;
-      if (!profile || profile.length < 2) { heightProfileEl.className = "profile-empty"; heightProfileEl.textContent = "No elevation data in this GPX file"; return; }
+      if (!profile || profile.length < 2) { heightProfileEl.className = "profile-empty"; heightProfileEl.textContent = "Keine Höhendaten in dieser GPX-Datei"; return; }
       const width = 280, height = 140, padding = { top: 14, right: 12, bottom: 26, left: 42 };
       const minElevation = Math.min(...profile.map((p) => p.elevation));
       const maxElevation = Math.max(...profile.map((p) => p.elevation));
@@ -306,11 +331,11 @@
       }
       const areaPoints = `${padding.left},${height - padding.bottom} ${linePoints} ${width - padding.right},${height - padding.bottom}`;
       heightProfileEl.className = "";
-      heightProfileEl.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Height profile for ${escapeHtml(route.name)}"><rect x="0" y="0" width="${width}" height="${height}" fill="#f8fafc"></rect><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line><line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line><polygon points="${areaPoints}" fill="${route.color}" opacity="0.16"></polygon><polyline points="${linePoints}" fill="none" stroke="${route.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>${activeMarkerSvg}<text x="${padding.left - 6}" y="${padding.top + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(maxElevation)} m</text><text x="${padding.left - 6}" y="${height - padding.bottom + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(minElevation)} m</text><text x="${padding.left}" y="${height - 8}" text-anchor="start" font-size="10" fill="#475569">0 km</text><text x="${width - padding.right}" y="${height - 8}" text-anchor="end" font-size="10" fill="#475569">${route.distanceKm.toFixed(1)} km</text></svg>`;
+      heightProfileEl.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Höhenprofil für ${escapeHtml(route.name)}"><rect x="0" y="0" width="${width}" height="${height}" fill="#f8fafc"></rect><line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line><line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line><polygon points="${areaPoints}" fill="${route.color}" opacity="0.16"></polygon><polyline points="${linePoints}" fill="none" stroke="${route.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>${activeMarkerSvg}<text x="${padding.left - 6}" y="${padding.top + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(maxElevation)} m</text><text x="${padding.left - 6}" y="${height - padding.bottom + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(minElevation)} m</text><text x="${padding.left}" y="${height - 8}" text-anchor="start" font-size="10" fill="#475569">0 km</text><text x="${width - padding.right}" y="${height - 8}" text-anchor="end" font-size="10" fill="#475569">${route.distanceKm.toFixed(1)} km</text></svg>`;
     }
 
     function estimateHikingTimeHours(distanceKm, elevationGainM) { return distanceKm / 5 + elevationGainM / 600; }
-    function formatHours(hours) { if (!Number.isFinite(hours) || hours <= 0) return "-"; const totalMinutes = Math.round(hours * 60); const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; if (h === 0) return `${m} min`; if (m === 0) return `${h} h`; return `${h} h ${m} min`; }
+    function formatHours(hours) { if (!Number.isFinite(hours) || hours <= 0) return "-"; const totalMinutes = Math.round(hours * 60); const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; if (h === 0) return `${m} min`; if (m === 0) return `${h} Std.`; return `${h} Std. ${m} min`; }
     function haversineKm(a, b) { const radiusKm = 6371; const dLat = toRad(b.lat - a.lat); const dLon = toRad(b.lon - a.lon); const lat1 = toRad(a.lat); const lat2 = toRad(b.lat); const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2; return 2 * radiusKm * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)); }
     function toRad(degrees) { return degrees * Math.PI / 180; }
     function setStatus(message, isError = false) { statusEl.textContent = message; statusEl.className = isError ? "hint error" : "hint"; }
