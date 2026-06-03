@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GPX Map Viewer</title>
+  <title>Alpenüberquerung E5 - 2026</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body { height: 100%; margin: 0; }
@@ -51,12 +51,12 @@
   <div class="app">
     <header>
       <div class="brand">
-        <h1>GPX Map Viewer</h1>
-        <div class="subtitle">Static GPX routes from this GitHub Pages site.</div>
+        <h1>Alpenüberquerung E5 - 2026</h1>
+        <div class="subtitle">kleiner Überblick über die Routen</div>
       </div>
       <div class="controls">
-        <a id="allRoutesLink" class="route-link" href="./">All routes</a>
-        <button id="toggleHutsBtn">Hide huts</button>
+        <a id="allRoutesLink" class="route-link" href="./">Alle Routen</a>
+        <button id="toggleHutsBtn">Hütten ausblenden</button>
       </div>
     </header>
 
@@ -64,21 +64,21 @@
       <div class="map-wrap"><div id="map"></div></div>
       <aside>
         <div class="card">
-          <div class="label">Routes summary</div>
-          <div id="routeSummaryList" class="route-summary-empty">Loading routes...</div>
+          <div class="label">Routen Zusammenfassung</div>
+          <div id="routeSummaryList" class="route-summary-empty">Lade Routen...</div>
         </div>
         <div class="card">
-          <div class="label">Selected route</div>
+          <div class="label">Ausgewählte Route</div>
           <div id="hoverName" class="value">None</div>
           <p class="hint">
-            Distance: <strong id="hoverDistance">-</strong><br>
-            Elevation gain: <strong id="hoverElevation">-</strong><br>
-            Elevation loss: <strong id="hoverLoss">-</strong><br>
-            Estimated hiking time: <strong id="hoverTime">-</strong>
+            Distanz: <strong id="hoverDistance">-</strong><br>
+            Höhenmeter (hoch): <strong id="hoverElevation">-</strong><br>
+            Höhenmeter (runter): <strong id="hoverLoss">-</strong><br>
+            Wanderdauer (Schätzung): <strong id="hoverTime">-</strong>
           </p>
-          <div id="heightProfile" class="profile-empty">No height profile selected</div>
+          <div id="heightProfile" class="profile-empty">Kein Höhenprofil ausgewählt</div>
         </div>
-        <p id="status" class="hint">Loading GPX files from the routes folder.</p>
+        <p id="status" class="hint">Lade GPX Daten...</p>
       </aside>
     </main>
   </div>
@@ -131,8 +131,8 @@
 
     toggleHutsBtn.addEventListener("click", () => {
       hutsVisible = !hutsVisible;
-      if (hutsVisible) { hutLayerGroup.addTo(map); toggleHutsBtn.textContent = "Hide huts"; }
-      else { map.removeLayer(hutLayerGroup); toggleHutsBtn.textContent = "Show huts"; }
+      if (hutsVisible) { hutLayerGroup.addTo(map); toggleHutsBtn.textContent = "Hütten ausblenden"; }
+      else { map.removeLayer(hutLayerGroup); toggleHutsBtn.textContent = "Hütten einblenden"; }
     });
 
     async function loadRoutesFromManifest() {
