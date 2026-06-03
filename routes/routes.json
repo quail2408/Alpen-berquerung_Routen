@@ -9,7 +9,7 @@
     "name": "E5 - Tag 2 - Kemptner Hütte -> Memminger Hütte",
     "file": "routes/COURSE_424558044.gpx"
   },
-    {
+  {
     "id": "course-425990187",
     "name": "E5 - Tag 3 - Memminger Huette -> Talstation Rifenalbahn",
     "file": "routes/COURSE_425990187.gpx"
@@ -24,7 +24,7 @@
     "name": "E5 - Tag 4 - Zammer Alm -> Braunschweiger Huette",
     "file": "routes/COURSE_425990605_part2_after_bus.gpx"
   },
-    {
+  {
     "id": "course-425991376",
     "name": "E5 - Tag 5 - Braunschweiger Hütte -> Martin Busch Hütte",
     "file": "routes/COURSE_425991376.gpx"
@@ -33,7 +33,7 @@
     "id": "course-425991483",
     "name": "E5 - Tag 6 - Martin Busch Hütte - Vernagt",
     "file": "routes/COURSE_425991483.gpx"
-  }
+  },
   {
     "id": "course-425991759",
     "name": "E5 - Tag 7.1 - Katharinaberg -> Meran",
