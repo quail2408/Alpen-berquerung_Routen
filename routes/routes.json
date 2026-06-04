@@ -25,9 +25,14 @@
     "file": "routes/COURSE_425990605_part2_after_bus.gpx"
   },
   {
-    "id": "course-425991376",
+    "id": "course-425991376-part1",
     "name": "E5 - Tag 5 - Braunschweiger Hütte -> Martin Busch Hütte",
-    "file": "routes/COURSE_425991376.gpx"
+    "file": "routes/COURSE_part1_shorter.gpx"
+  },
+  {
+    "id": "course-425991376-part2",
+    "name": "E5 - Tag 5 - Braunschweiger Hütte -> Martin Busch Hütte",
+    "file": "routes/COURSE_part2.gpx"
   },
   {
     "id": "course-425991483",
