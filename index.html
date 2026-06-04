@@ -420,7 +420,7 @@
         }
       }
     
-      updateRouteSummaryList();
+      updateRouteOverview();
       fitAllRoutes();
     }
 
@@ -440,7 +440,8 @@
         return;
       }
 
-      const totals = loadedRoutes.reduce((summary, route) => {
+      const activeRoutes = loadedRoutes.filter((route) => activeRouteIds.has(route.id));
+      const totals = activeRoutes.reduce((summary, route) => {
         summary.distanceKm += route.distanceKm;
         summary.elevationGainM += route.elevationGainM;
         summary.elevationLossM += route.elevationLossM;
@@ -450,7 +451,7 @@
 
       totalSummaryEl.className = "";
       totalSummaryEl.innerHTML = `
-        <div class="route-summary-title">${selectedRouteId ? "Einzelroute" : `${loadedRoutes.length} Route${loadedRoutes.length === 1 ? "" : "n"} geladen`}</div>
+        <div class="route-summary-title">${activeRoutes.length} von ${loadedRoutes.length} Route${loadedRoutes.length === 1 ? "" : "n"} angezeigt</div>
         <div class="route-summary-metrics">
           Gesamtdistanz: <strong>${totals.distanceKm.toFixed(2)} km</strong><br>
           Höhenmeter bergauf gesamt: <strong>${Math.round(totals.elevationGainM).toLocaleString("de-DE")} m</strong><br>
@@ -462,10 +463,31 @@
       routeListEl.className = "";
       routeListEl.innerHTML = loadedRoutes.map((route) => `
         <div class="route-item">
-          <a href="?route=${encodeURIComponent(route.id)}"><span style="color:${route.color}">●</span> ${escapeHtml(route.name)}</a><br>
-          <span class="route-summary-metrics">${route.distanceKm.toFixed(2)} km · ${Math.round(route.elevationGainM).toLocaleString("de-DE")} m bergauf · ${formatHours(route.hikingTimeHours)}</span>
+          <label class="route-toggle-row">
+            <input
+              type="checkbox"
+              class="route-toggle"
+              data-route-id="${escapeHtml(route.id)}"
+              ${activeRouteIds.has(route.id) ? "checked" : ""}
+            >
+            <span>
+              <a href="?route=${encodeURIComponent(route.id)}">
+                <span style="color:${route.color}">●</span> ${escapeHtml(route.name)}
+              </a><br>
+              <span class="route-summary-metrics">
+                ${route.distanceKm.toFixed(2)} km · ${Math.round(route.elevationGainM).toLocaleString("de-DE")} m bergauf · ${formatHours(route.hikingTimeHours)}
+              </span>
+            </span>
+          </label>
         </div>
       `).join("");
+
+      document.querySelectorAll(".route-toggle").forEach((toggle) => {
+        toggle.addEventListener("change", (event) => {
+          const routeId = event.target.dataset.routeId;
+          setRouteVisibility(routeId, event.target.checked);
+        });
+      });
     }
 
     function showHoveredRoute(route, activePoint = null) {
