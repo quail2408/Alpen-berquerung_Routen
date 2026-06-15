@@ -334,12 +334,6 @@
       gap: 10px; 
       margin: 12px 0;
     }
-    .day-card.no-gpx .day-grid {
-      display: none;
-    }
-    .day-card.no-gpx .day-card-top {
-      align-items: start;
-    }
     .metric-box { 
       border: 1px solid #eef2f6;
       border-radius: 12px; 
@@ -437,6 +431,41 @@
       padding: 10px 12px;
       margin-top: 10px;
       font-size: 14px; 
+    }
+
+    .travel-day-visual {
+      min-height: 190px;
+      border: 1px solid #dde3ea;
+      border-radius: 14px;
+      padding: 22px 20px;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+      color: #475569;
+    }
+    .travel-day-line {
+      display: grid;
+      grid-template-columns: 16px 1fr 16px;
+      align-items: center;
+      gap: 10px;
+    }
+    .travel-day-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: #17202a;
+    }
+    .travel-day-rail {
+      height: 3px;
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+    .travel-day-title {
+      color: #17202a;
+      font-size: 18px;
+      font-weight: 800;
     }
     @media (max-width: 850px) {
       .day-card-top, .day-grid, .day-detail { grid-template-columns: 1fr; }
@@ -836,23 +865,30 @@
 
       timePlanListEl.innerHTML = timePlan.map((day) => {
         const routes = getRoutesForDay(day);
+        const hasRoutes = routes.length > 0;
         const summary = summarizeRoutes(routes);
         const missingRouteIds = day.routeIds.filter((routeId) => !loadedRoutes.some((route) => route.id === routeId));
         const dayRoutesUrl = getRoutesUrl(day.routeIds);
-        const hasRoutes = routes.length > 0;
         const routeLinks = hasRoutes
           ? `${day.routeIds.length > 1 ? `<a class="secondary-link" href="${escapeHtml(dayRoutesUrl)}">Alle Routen dieses Tages anzeigen</a>` : ""}${routes.map((route) => `<a href="?route=${encodeURIComponent(route.id)}">${escapeHtml(route.name)}</a>`).join("")}`
-          : `<span class="hint">${day.routeIds.length ? "GPX-Route noch nicht geladen." : "Reiseabschnitt ohne GPX-Route."}</span>`;
+          : `<span class="hint">Reiseabschnitt ohne GPX-Route.</span>`;
         const dayVisuals = hasRoutes
           ? `<div class="day-visuals"><div class="day-preview-map" aria-label="Kartenvorschau für Tag ${day.day}">${renderDayPreviewMap(day, routes)}</div><div class="day-mini-elevation" aria-label="Mini-Höhenprofil für Tag ${day.day}">${renderDayMiniElevation(day, routes)}</div></div>`
           : renderDayTravelVisual(day);
+        const metricsGrid = hasRoutes
+          ? `<div class="day-grid">
+                  <div class="metric-box"><div class="label">Distanz</div><strong>${summary.distanceKm.toFixed(2)} km</strong></div>
+                  <div class="metric-box"><div class="label">Bergauf</div><strong>${Math.round(summary.elevationGainM).toLocaleString("de-DE")} m</strong></div>
+                  <div class="metric-box"><div class="label">Bergab</div><strong>${Math.round(summary.elevationLossM).toLocaleString("de-DE")} m</strong></div>
+                  <div class="metric-box"><div class="label">Gehzeit</div><strong>${formatHours(summary.hikingTimeHours)}</strong></div>
+                </div>`
+          : "";
         const hutLink = day.hutWebsite
           ? `<a href="${escapeHtml(day.hutWebsite)}" target="_blank" rel="noopener noreferrer">${escapeHtml(day.hut)}</a>`
           : escapeHtml(day.hut);
         const missingNote = missingRouteIds.length
           ? `<div class="placeholder-note">Diese routeIds wurden in den geladenen GPX-Routen nicht gefunden: ${missingRouteIds.map(escapeHtml).join(", ")}</div>`
           : "";
-        const emptyNote = "";
 
         return `
           <article id="day-${day.day}" class="day-card${hasRoutes ? "" : " no-gpx"}">
@@ -860,12 +896,7 @@
               <div>
                 <h3>Tag ${day.day}: ${escapeHtml(day.title)}</h3>
                 <div class="day-meta">${escapeHtml(day.date)} · ${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
-                <div class="day-grid">
-                  <div class="metric-box"><div class="label">Distanz</div><strong>${summary.distanceKm ? summary.distanceKm.toFixed(2) + " km" : "-"}</strong></div>
-                  <div class="metric-box"><div class="label">Bergauf</div><strong>${summary.elevationGainM ? Math.round(summary.elevationGainM).toLocaleString("de-DE") + " m" : "-"}</strong></div>
-                  <div class="metric-box"><div class="label">Bergab</div><strong>${summary.elevationLossM ? Math.round(summary.elevationLossM).toLocaleString("de-DE") + " m" : "-"}</strong></div>
-                  <div class="metric-box"><div class="label">Gehzeit</div><strong>${formatHours(summary.hikingTimeHours)}</strong></div>
-                </div>
+                ${metricsGrid}
               </div>
               ${dayVisuals}
             </div>
@@ -873,11 +904,11 @@
               <div>
                 <h4>${hasRoutes ? "Route(n)" : "Reiseabschnitt"}</h4>
                 <div class="day-route-links">${routeLinks}</div>
-                ${missingNote}${emptyNote}
+                ${missingNote}
               </div>
               <div>
                 <h4>Unterkunft</h4>
-                <p>${hutLink}<br>Preis: ${escapeHtml(day.price)}</p>
+                <p>${hutLink || "-"}<br>Preis: ${escapeHtml(day.price || "-")}</p>
               </div>
               <div>
                 <h4>Bus / Transfer</h4>
@@ -895,6 +926,21 @@
       if (selectedView === "timeplan") {
         setTimeout(initializeDayPreviewMaps, 0);
       }
+    }
+
+    function renderDayTravelVisual(day) {
+      return `
+        <div class="travel-day-visual" aria-label="Reiseabschnitt für Tag ${day.day}">
+          <div class="travel-day-line" aria-hidden="true">
+            <span class="travel-day-dot"></span>
+            <span class="travel-day-rail"></span>
+            <span class="travel-day-dot"></span>
+          </div>
+          <div class="label">Reisetag ohne GPX-Route</div>
+          <div class="travel-day-title">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
+          <div>Für diesen Tag werden keine Strecken-, Karten- oder Höhenprofil-Kacheln angezeigt.</div>
+        </div>
+      `;
     }
 
     function addHutMarkers() {
