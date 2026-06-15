@@ -530,6 +530,136 @@
       font-size: 13px;
       font-weight: 800;
     }
+    .calendar-overview {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      margin-top: 16px;
+    }
+    .month-calendar {
+      border: 1px solid #dde3ea;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .month-calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #f8fafc;
+      border-bottom: 1px solid #dde3ea;
+    }
+    .month-calendar-title {
+      font-size: 18px;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+    }
+    .month-calendar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .calendar-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .calendar-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      background: #17202a;
+    }
+    .calendar-legend-swatch.travel {
+      background: repeating-linear-gradient(135deg, #64748b 0 4px, #cbd5e1 4px 8px);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+    .calendar-weekday {
+      padding: 9px 4px;
+      text-align: center;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 850;
+      background: #ffffff;
+      border-bottom: 1px solid #eef2f6;
+    }
+    .calendar-day {
+      min-height: 58px;
+      padding: 7px;
+      border-right: 1px solid #eef2f6;
+      border-bottom: 1px solid #eef2f6;
+      color: #94a3b8;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+    .calendar-day:nth-child(7n) {
+      border-right: 0;
+    }
+    .calendar-day.in-month {
+      color: #17202a;
+    }
+    .calendar-day.has-stage {
+      color: #ffffff;
+      background: var(--calendar-color, #17202a);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    .calendar-day.is-travel {
+      color: #17202a;
+      background: repeating-linear-gradient(135deg, #f8fafc 0 6px, #e2e8f0 6px 12px);
+      border-color: #cbd5e1;
+    }
+    .calendar-day.is-travel::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: #64748b;
+    }
+    .calendar-date-number {
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .calendar-day-title {
+      font-size: 11px;
+      font-weight: 850;
+      line-height: 1.15;
+    }
+    .calendar-day-route {
+      font-size: 10px;
+      line-height: 1.2;
+      opacity: 0.92;
+    }
+    .calendar-day.has-stage .calendar-day-route,
+    .calendar-day.has-stage .calendar-day-title {
+      color: rgba(255, 255, 255, 0.96);
+    }
+    .calendar-day-link {
+      color: inherit;
+      text-decoration: none;
+    }
+    @media (max-width: 850px) {
+      .calendar-overview {
+        grid-template-columns: 1fr;
+      }
+      .calendar-day {
+        min-height: 52px;
+      }
+    }
     @media (max-width: 950px) {
       .timeline-overview {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -747,7 +877,7 @@
       { day: 5, date: "06.09.2026", title: "Etappe 5", start: "Braunschweiger Hütte", end: "Martin-Busch-Hütte", hut: "Martin-Busch-Hütte", hutWebsite: "https://dav-berlin.de/huetten-ueberblick-anfahrt/oetztal/martin-busch-huette/", price: "61,00€ (inkl. Frühstück)", routeIds: ["course-425991376-part1", "course-425991376-part2"], bus: "Bus oder Taxi von Rettenbachjoch bis Tiefenbachferner durch Europas höchsten Autotunnel.", notes: "Technisch anspruchsvolle Etappe. Einkaufsmöglichkeiten in Vent." },
       { day: 6, date: "07.09.2026", title: "Etappe 6", start: "Martin-Busch-Hütte", end: "Vernagt", hut: "Gasthof Neuratheis", hutWebsite: "https://www.booking.com/hotel/it/gasthof-neuratheis.de.html", price: "44,00€ (mit Küche)", routeIds: ["course-425991483"], bus: "ca. 25 Minuten Busfahrt von Vernagt nach Katharinaberg zu unserer Unterkunft.", notes: "Eine kurze Etappe, es geht fast nur bergab. Vernagt gehört bereits zu Meran und man kann behaupten, man habe die Alpen bereits überquert." },
       { day: 7, date: "08.09.2026", title: "Etappe 7", start: "Katharinaberg", end: "Meran", hut: "Casa Vacanze Monachy", hutWebsite: "tbd", price: "41,25€ + 2,20€ Ortstaxe", routeIds: ["course-425991759", "course-425992291"], bus: "Es gibt mehrere Möglichkeiten diese Etappe mit Bus oder Bahn abzukürzen (theoretisch auch ganz von Katharinaberg nach Meran)", notes: "Laut Wanderführer ist dieser Tag mit zwei Etappen geplant. Wir werden also vermutlich nicht um ein Abkürzen mit Bus oder Bahn drum herum kommen." },
-      { day: 8, date: "02.09.2026", title: "Abreise", start: "Meran", end: "Bonn", hut: "", hutWebsite: "", price: "", routeIds: [], bus: "Flixbus von Meran über München nach Bonn", notes: "Flixbus startet am 09.09.2026 um 11:20 Uhr in Meran. Umstieg in München von 16 Uhr bis 21:20 Uhr. Ankunft in Bonn am 10.09.2026 um 5:25 Uhr." }
+      { day: 8, date: "09.09.2026", title: "Abreise", start: "Meran", end: "Bonn", hut: "", hutWebsite: "", price: "", routeIds: [], bus: "Flixbus von Meran über München nach Bonn", notes: "Flixbus startet am 09.09.2026 um 11:20 Uhr in Meran. Umstieg in München von 16 Uhr bis 21:20 Uhr. Ankunft in Bonn am 10.09.2026 um 5:25 Uhr." }
     ];
 
     addHutMarkers();
@@ -1134,29 +1264,92 @@
     function renderTimePlanOverview() {
       timePlanOverviewEl.innerHTML = `
         <h3>Übersicht über alle Tage</h3>
-        <p class="hint">Kompakte Übersicht vom Reisebeginn bis zur Abreise. Die Kacheln springen direkt zum jeweiligen Tag.</p>
-        <div class="timeline-overview">
-          ${timePlan.map((day) => {
-            const routes = getRoutesForDay(day);
-            const hasRoutes = routes.length > 0;
-            const summary = summarizeRoutes(routes);
-            const dayColor = hasRoutes ? routes[0].color : "#64748b";
-            const metrics = hasRoutes
-              ? `<div class="timeline-day-metrics">${summary.distanceKm.toFixed(1)} km · ${formatHours(summary.hikingTimeHours)}</div>`
-              : `<div class="timeline-day-metrics">Reisetag</div>`;
-            return `
-              <a class="timeline-day ${hasRoutes ? "is-hike" : "is-travel"}" href="#day-${day.day}" style="--day-color:${escapeHtml(dayColor)}">
-                <div class="timeline-day-number">Tag ${day.day}</div>
-                <div class="timeline-day-type">${hasRoutes ? "Etappe" : "Reisetag"}</div>
-                <div class="timeline-day-title">${escapeHtml(day.title)}</div>
-                <div class="timeline-day-date">${escapeHtml(day.date)}</div>
-                <div class="timeline-day-route">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
-                ${metrics}
-              </a>
-            `;
-          }).join("")}
+        <p class="hint">Kompakte Übersicht vom Reisebeginn bis zur Abreise. September 2026 wird als echter Monatskalender angezeigt; Etappen und Reisetage sind visuell getrennt.</p>
+        <div class="calendar-overview">
+          ${renderSeptemberCalendar()}
+          <div class="timeline-overview">
+            ${timePlan.map((day) => {
+              const routes = getRoutesForDay(day);
+              const hasRoutes = routes.length > 0;
+              const summary = summarizeRoutes(routes);
+              const dayColor = hasRoutes ? routes[0].color : "#64748b";
+              const metrics = hasRoutes
+                ? `<div class="timeline-day-metrics">${summary.distanceKm.toFixed(1)} km · ${formatHours(summary.hikingTimeHours)}</div>`
+                : `<div class="timeline-day-metrics">Reisetag</div>`;
+              return `
+                <a class="timeline-day ${hasRoutes ? "is-hike" : "is-travel"}" href="#day-${day.day}" style="--day-color:${escapeHtml(dayColor)}">
+                  <div class="timeline-day-number">Tag ${day.day}</div>
+                  <div class="timeline-day-type">${hasRoutes ? "Etappe" : "Reisetag"}</div>
+                  <div class="timeline-day-title">${escapeHtml(day.title)}</div>
+                  <div class="timeline-day-date">${escapeHtml(day.date)}</div>
+                  <div class="timeline-day-route">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
+                  ${metrics}
+                </a>
+              `;
+            }).join("")}
+          </div>
         </div>
+      `;
+    }
 
+    function parseGermanDate(dateText) {
+      const [day, month, year] = String(dateText).split(".").map(Number);
+      return { day, month, year };
+    }
+
+    function renderSeptemberCalendar() {
+      const year = 2026;
+      const month = 9;
+      const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+      const daysInMonth = 30;
+      const firstWeekdayMondayBased = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+      const dayByDate = new Map(timePlan.map((day) => {
+        const parsed = parseGermanDate(day.date);
+        return parsed.year === year && parsed.month === month ? [parsed.day, day] : null;
+      }).filter(Boolean));
+      const totalCells = Math.ceil((firstWeekdayMondayBased + daysInMonth) / 7) * 7;
+      const cells = [];
+
+      for (let cellIndex = 0; cellIndex < totalCells; cellIndex++) {
+        const dateNumber = cellIndex - firstWeekdayMondayBased + 1;
+        const isInMonth = dateNumber >= 1 && dateNumber <= daysInMonth;
+        const day = isInMonth ? dayByDate.get(dateNumber) : null;
+        const routes = day ? getRoutesForDay(day) : [];
+        const hasRoutes = routes.length > 0;
+        const isTravel = Boolean(day && !hasRoutes);
+        const classes = ["calendar-day", isInMonth ? "in-month" : "", hasRoutes ? "has-stage" : "", isTravel ? "is-travel" : ""].filter(Boolean).join(" ");
+        const style = hasRoutes ? ` style="--calendar-color:${escapeHtml(routes[0].color)}"` : "";
+
+        if (!isInMonth) {
+          cells.push(`<div class="${classes}" aria-hidden="true"></div>`);
+          continue;
+        }
+
+        const content = day
+          ? `<a class="calendar-day-link" href="#day-${day.day}">
+              <div class="calendar-date-number">${dateNumber}</div>
+              <div class="calendar-day-title">${escapeHtml(day.title)}</div>
+              <div class="calendar-day-route">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
+            </a>`
+          : `<div class="calendar-date-number">${dateNumber}</div>`;
+
+        cells.push(`<div class="${classes}"${style}>${content}</div>`);
+      }
+
+      return `
+        <div class="month-calendar" aria-label="Mini-Kalender September 2026">
+          <div class="month-calendar-header">
+            <div class="month-calendar-title">September 2026</div>
+            <div class="month-calendar-legend" aria-label="Legende">
+              <span class="calendar-legend-item"><span class="calendar-legend-swatch"></span> Etappe</span>
+              <span class="calendar-legend-item"><span class="calendar-legend-swatch travel"></span> Anreise / Abreise</span>
+            </div>
+          </div>
+          <div class="calendar-grid">
+            ${weekdays.map((weekday) => `<div class="calendar-weekday">${weekday}</div>`).join("")}
+            ${cells.join("")}
+          </div>
+        </div>
       `;
     }
 
