@@ -698,8 +698,12 @@
       }
     }
 
+    function getDayRouteIds(day) {
+      return Array.isArray(day.routeIds) ? day.routeIds : [];
+    }
+
     function getRoutesForDay(day) {
-      return day.routeIds.map((routeId) => loadedRoutes.find((route) => route.id === routeId)).filter(Boolean);
+      return getDayRouteIds(day).map((routeId) => loadedRoutes.find((route) => route.id === routeId)).filter(Boolean);
     }
 
     function summarizeRoutes(routes) {
@@ -867,10 +871,11 @@
         const routes = getRoutesForDay(day);
         const hasRoutes = routes.length > 0;
         const summary = summarizeRoutes(routes);
-        const missingRouteIds = day.routeIds.filter((routeId) => !loadedRoutes.some((route) => route.id === routeId));
-        const dayRoutesUrl = getRoutesUrl(day.routeIds);
+        const dayRouteIds = getDayRouteIds(day);
+        const missingRouteIds = dayRouteIds.filter((routeId) => !loadedRoutes.some((route) => route.id === routeId));
+        const dayRoutesUrl = getRoutesUrl(dayRouteIds);
         const routeLinks = hasRoutes
-          ? `${day.routeIds.length > 1 ? `<a class="secondary-link" href="${escapeHtml(dayRoutesUrl)}">Alle Routen dieses Tages anzeigen</a>` : ""}${routes.map((route) => `<a href="?route=${encodeURIComponent(route.id)}">${escapeHtml(route.name)}</a>`).join("")}`
+          ? `${dayRouteIds.length > 1 ? `<a class="secondary-link" href="${escapeHtml(dayRoutesUrl)}">Alle Routen dieses Tages anzeigen</a>` : ""}${routes.map((route) => `<a href="?route=${encodeURIComponent(route.id)}">${escapeHtml(route.name)}</a>`).join("")}`
           : `<span class="hint">Reiseabschnitt ohne GPX-Route.</span>`;
         const dayVisuals = hasRoutes
           ? `<div class="day-visuals"><div class="day-preview-map" aria-label="Kartenvorschau für Tag ${day.day}">${renderDayPreviewMap(day, routes)}</div><div class="day-mini-elevation" aria-label="Mini-Höhenprofil für Tag ${day.day}">${renderDayMiniElevation(day, routes)}</div></div>`
