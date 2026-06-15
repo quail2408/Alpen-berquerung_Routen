@@ -228,22 +228,22 @@
       font-weight: 700;
     }
     .nav-link {
-      border: 1px solid #dde3ea; 
-      border-radius: 10px; 
-      padding: 10px 14px; 
-      background: #ffffff; 
-      color: #17202a; 
-      cursor: pointer; 
-      font-weight: 700; 
-      font-size: inherit; 
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: #17202a;
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: inherit;
       line-height: normal;
       min-height: 40px;
-      text-decoration: none; 
+      text-decoration: none;
       display: inline-flex;
-      align-items: center; 
+      align-items: center;
     }
     .nav-link:hover {
-      background: #f1f5f9; 
+      background: #263445;
     }
     .timeplan-page { 
       display: none; 
@@ -366,7 +366,8 @@
     }
     .day-route-links { 
       display: flex; 
-      flex-wrap: wrap; 
+      flex-direction: column;
+      align-items: flex-start;
       gap: 8px; 
       margin-top: 8px; 
     }
@@ -377,7 +378,11 @@
       color: #ffffff; 
       text-decoration: none; 
       font-weight: 700;
-      font-size: 14px; 
+      font-size: 14px;
+      width: 100%;
+      max-width: 320px;
+      display: block;
+      text-align: center;
     }
     .day-route-links .secondary-link {
       background: #ffffff; 
