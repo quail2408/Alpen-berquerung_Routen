@@ -526,10 +526,8 @@
       font-weight: 800;
     }
     .calendar-overview {
-      display: grid;
-      grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
-      gap: 18px;
-      align-items: start;
+      display: block;
+      width: 100%;
       margin-top: 16px;
     }
     .month-calendar {
@@ -781,6 +779,30 @@
     .timeplan-overview .mini-calendar-day,
     .timeplan-overview .real-calendar-day {
       min-height: 118px;
+    }
+
+  
+    /* Final calendar layout: no old right-column overview space */
+    #timePlanOverview .calendar-overview {
+      display: block !important;
+      width: 100% !important;
+      max-width: none !important;
+      grid-template-columns: none !important;
+    }
+
+    #timePlanOverview .month-calendar {
+      width: 100% !important;
+      max-width: none !important;
+    }
+
+    #timePlanOverview .month-calendar-grid {
+      display: grid !important;
+      grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+      width: 100% !important;
+    }
+
+    #timePlanOverview .month-calendar-day {
+      min-height: 120px;
     }
 
   </style>
