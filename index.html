@@ -736,6 +736,28 @@
       display: grid;
     }
 
+  
+    /* Calendar overview should fill the full card width */
+    .timeplan-overview .calendar-overview,
+    .timeplan-overview .month-calendar,
+    .timeplan-overview .real-calendar,
+    .timeplan-overview .mini-calendar {
+      width: 100%;
+      max-width: none;
+    }
+
+    .timeplan-overview .calendar-grid {
+      width: 100%;
+      max-width: none;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .timeplan-overview .calendar-day,
+    .timeplan-overview .calendar-cell,
+    .timeplan-overview .month-day {
+      min-height: 118px;
+    }
+
   </style>
 </head>
 <body>
