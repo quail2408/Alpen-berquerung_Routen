@@ -1157,7 +1157,10 @@
     
       routeLayer.on("mouseout", () => {
         routeLayer.setStyle({ weight: selectedRouteIds.length ? 7 : 6 });
-        if (!selectedRouteIds.length) clearHoveredRoute();
+        if (!selectedRouteIds.length && currentlyDisplayedRoute && currentlyDisplayedRoute.id === route.id) {
+          renderHeightProfile(route);
+          clearProfileHoverMarker();
+        }
       });
     
       const startMarker = L.circleMarker(latLngs[0], {
