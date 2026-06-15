@@ -874,7 +874,16 @@
           : `<span class="hint">Reiseabschnitt ohne GPX-Route.</span>`;
         const dayVisuals = hasRoutes
           ? `<div class="day-visuals"><div class="day-preview-map" aria-label="Kartenvorschau für Tag ${day.day}">${renderDayPreviewMap(day, routes)}</div><div class="day-mini-elevation" aria-label="Mini-Höhenprofil für Tag ${day.day}">${renderDayMiniElevation(day, routes)}</div></div>`
-          : renderDayTravelVisual(day);
+          : `<div class="travel-day-visual" aria-label="Reiseabschnitt für Tag ${day.day}">
+              <div class="travel-day-line" aria-hidden="true">
+                <span class="travel-day-dot"></span>
+                <span class="travel-day-rail"></span>
+                <span class="travel-day-dot"></span>
+              </div>
+              <div class="label">Reisetag ohne GPX-Route</div>
+              <div class="travel-day-title">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
+              <div>Für diesen Tag werden keine Strecken-, Karten- oder Höhenprofil-Kacheln angezeigt.</div>
+            </div>`;
         const metricsGrid = hasRoutes
           ? `<div class="day-grid">
                   <div class="metric-box"><div class="label">Distanz</div><strong>${summary.distanceKm.toFixed(2)} km</strong></div>
