@@ -427,7 +427,6 @@
     }
 
     .timeplan-overview {
-      display:none;
       border: 1px solid #dde3ea;
       border-radius: 18px;
       padding: 18px;
@@ -440,7 +439,7 @@
       font-size: 20px;
     }
     .timeline-overview {
-      display: grid;
+      display: none;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       margin-top: 16px;
@@ -728,6 +727,15 @@
       main { grid-template-columns: 1fr; grid-template-rows: 65vh auto; }
       aside { border-left: 0; border-top: 1px solid #dde3ea; }
     }
+  
+    .calendar-overview,
+    .month-calendar,
+    .calendar-grid,
+    .real-calendar,
+    .mini-calendar {
+      display: grid;
+    }
+
   </style>
 </head>
 <body>
