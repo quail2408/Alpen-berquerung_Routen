@@ -287,10 +287,7 @@
       min-width: 260px; 
     }
     .day-nav { 
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px; 
-      margin: 16px 0 20px; 
+      display: none;
     }
     .day-nav a { 
       border: 1px solid #dde3ea;
@@ -443,35 +440,40 @@
     }
     .timeline-overview {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 10px;
-      margin-top: 14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
     }
     .timeline-day {
       border: 1px solid #dde3ea;
-      border-radius: 14px;
-      padding: 12px;
-      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px 14px 14px 18px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       color: #17202a;
       text-decoration: none;
-      min-height: 148px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      min-height: 132px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto auto 1fr auto;
+      gap: 6px 12px;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
     }
     .timeline-day:hover {
-      background: #f1f5f9;
+      background: #ffffff;
       border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
     }
     .timeline-day::before {
       content: "";
       position: absolute;
       left: 0;
       top: 0;
-      right: 0;
-      height: 5px;
+      bottom: 0;
+      width: 6px;
       background: #17202a;
     }
     .timeline-day.is-hike::before {
@@ -483,49 +485,57 @@
     .timeline-day-number {
       color: #667085;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
+      grid-column: 1 / 2;
+    }
+    .timeline-day-type {
+      grid-column: 2 / 3;
+      grid-row: 1 / 2;
+      align-self: start;
+      border: 1px solid #dde3ea;
+      border-radius: 999px;
+      padding: 3px 8px;
+      color: #475569;
+      background: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .timeline-day.is-hike .timeline-day-type {
+      color: #17202a;
+      border-color: #cbd5e1;
+      background: #f8fafc;
     }
     .timeline-day-title {
-      font-weight: 800;
+      grid-column: 1 / 3;
+      font-weight: 850;
+      font-size: 18px;
       line-height: 1.25;
     }
     .timeline-day-date {
+      grid-column: 1 / 3;
       color: #667085;
       font-size: 13px;
     }
     .timeline-day-route {
+      grid-column: 1 / 3;
       color: #475569;
-      font-size: 13px;
+      font-size: 14px;
       line-height: 1.35;
-      margin-top: auto;
+      margin-top: 4px;
     }
     .timeline-day-metrics {
+      grid-column: 1 / 3;
       color: #17202a;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
     }
-    .timeline-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 12px;
-      color: #667085;
-      font-size: 13px;
+    @media (max-width: 950px) {
+      .timeline-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
-    .timeline-legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .timeline-legend i {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: #17202a;
-      display: inline-block;
-    }
-    .timeline-legend .travel-dot { background: #64748b; }
-    @media (max-width: 850px) {
+    @media (max-width: 650px) {
       .timeline-overview {
         grid-template-columns: 1fr;
       }
@@ -961,7 +971,7 @@
     function renderTimePlanOverview() {
       timePlanOverviewEl.innerHTML = `
         <h3>Übersicht über alle Tage</h3>
-        <p class="hint">Kompakte Zeitachse vom Reisebeginn bis zur Abreise. Die Kacheln springen direkt zum jeweiligen Tag.</p>
+        <p class="hint">Kompakte Übersicht vom Reisebeginn bis zur Abreise. Die Kacheln springen direkt zum jeweiligen Tag.</p>
         <div class="timeline-overview">
           ${timePlan.map((day) => {
             const routes = getRoutesForDay(day);
@@ -974,6 +984,7 @@
             return `
               <a class="timeline-day ${hasRoutes ? "is-hike" : "is-travel"}" href="#day-${day.day}" style="--day-color:${escapeHtml(dayColor)}">
                 <div class="timeline-day-number">Tag ${day.day}</div>
+                <div class="timeline-day-type">${hasRoutes ? "Etappe" : "Reisetag"}</div>
                 <div class="timeline-day-title">${escapeHtml(day.title)}</div>
                 <div class="timeline-day-date">${escapeHtml(day.date)}</div>
                 <div class="timeline-day-route">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
@@ -982,10 +993,7 @@
             `;
           }).join("")}
         </div>
-        <div class="timeline-legend">
-          <span><i></i>Wanderetappe</span>
-          <span><i class="travel-dot"></i>Reisetag ohne GPX-Route</span>
-        </div>
+
       `;
     }
 
@@ -1009,7 +1017,7 @@
         </div>
       `;
 
-      dayNavEl.innerHTML = timePlan.map((day) => `<a href="#day-${day.day}">Tag ${day.day}</a>`).join("");
+      dayNavEl.innerHTML = "";
       renderTimePlanOverview();
 
       timePlanListEl.innerHTML = timePlan.map((day) => {
