@@ -315,7 +315,7 @@
     }
     .day-card-top { 
       display: grid; 
-      grid-template-columns: minmax(0, 1fr) 280px;
+      grid-template-columns: minmax(0, 1fr) 340px;
       gap: 16px; 
       align-items: stretch;
     }
@@ -384,18 +384,33 @@
       color: #17202a;
       border: 1px solid #dde3ea;
     }
+    .day-visuals {
+      display: grid;
+      gap: 10px;
+    }
     .day-preview-map {
+      height: 190px; 
       min-height: 190px; 
       border: 1px solid #dde3ea;
       border-radius: 14px; 
       overflow: hidden; 
       background: #eef6ff; 
     }
-    .day-preview-map svg {
-      display: block; 
-      width: 100%; 
-      height: 100%; 
-      min-height: 190px;
+    .day-preview-map .leaflet-container {
+      width: 100%;
+      height: 100%;
+    }
+    .day-mini-elevation {
+      height: 118px;
+      border: 1px solid #dde3ea;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+    .day-mini-elevation svg {
+      display: block;
+      width: 100%;
+      height: 100%;
     }
     .day-preview-empty {
       min-height: 190px; 
@@ -513,6 +528,7 @@
     let hutLayerGroup = null;
     let profileHoverMarker = null;
     let currentlyDisplayedRoute = null;
+    let dayPreviewMaps = [];
 
     const pageParams = new URLSearchParams(window.location.search);
     const selectedRouteParam = pageParams.get("route") || pageParams.get("routes");
@@ -640,7 +656,10 @@
       document.body.classList.toggle("timeplan-open", showTimePlan);
       if (showTimePlan) {
         timePlanLink.textContent = "Zeitplan";
-        setTimeout(() => map.invalidateSize(), 0);
+        setTimeout(() => {
+          map.invalidateSize();
+          initializeDayPreviewMaps();
+        }, 0);
       }
     }
 
@@ -674,50 +693,117 @@
       heightProfileEl.textContent = "Mehrere Routen ausgewählt. Einzelne Route berühren, um das Höhenprofil zu sehen.";
     }
 
-    function renderDayPreviewMap(routes) {
+    function renderDayPreviewMap(day, routes) {
       if (!routes.length) return `<div class="day-preview-empty">Keine Vorschau ohne GPX-Verknüpfung</div>`;
+      return `<div id="day-preview-map-${day.day}" class="day-preview-map-leaflet" aria-label="Kartenvorschau für Tag ${day.day}"></div>`;
+    }
 
-      const points = routes.flatMap((route) => route.points.map((point) => ({ ...point, routeColor: route.color })));
-      if (!points.length) return `<div class="day-preview-empty">Keine Kartendaten verfügbar</div>`;
+    function renderDayMiniElevation(day, routes) {
+      if (!routes.length) return `<div class="day-preview-empty" style="min-height:118px;">Kein Höhenprofil ohne GPX-Verknüpfung</div>`;
 
-      const width = 280;
-      const height = 190;
-      const padding = 18;
-      const minLat = Math.min(...points.map((point) => point.lat));
-      const maxLat = Math.max(...points.map((point) => point.lat));
-      const minLon = Math.min(...points.map((point) => point.lon));
-      const maxLon = Math.max(...points.map((point) => point.lon));
-      const latRange = Math.max(0.000001, maxLat - minLat);
-      const lonRange = Math.max(0.000001, maxLon - minLon);
-      const scale = Math.min((width - padding * 2) / lonRange, (height - padding * 2) / latRange);
-      const drawWidth = lonRange * scale;
-      const drawHeight = latRange * scale;
-      const offsetX = (width - drawWidth) / 2;
-      const offsetY = (height - drawHeight) / 2;
+      const profile = [];
+      let offsetKm = 0;
+      routes.forEach((route) => {
+        route.profilePoints.forEach((point, index) => {
+          profile.push({
+            distanceKm: offsetKm + point.distanceKm,
+            elevation: point.elevation,
+            color: route.color,
+            startsSegment: index === 0
+          });
+        });
+        offsetKm += route.distanceKm;
+      });
+
+      if (profile.length < 2) return `<div class="day-preview-empty" style="min-height:118px;">Keine Höhendaten verfügbar</div>`;
+
+      const width = 340;
+      const height = 118;
+      const padding = { top: 12, right: 12, bottom: 24, left: 42 };
+      const minElevation = Math.min(...profile.map((p) => p.elevation));
+      const maxElevation = Math.max(...profile.map((p) => p.elevation));
+      const maxDistance = Math.max(0.001, Math.max(...profile.map((p) => p.distanceKm)));
+      const elevationRange = Math.max(1, maxElevation - minElevation);
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
       const project = (point) => {
-        const x = offsetX + (point.lon - minLon) * scale;
-        const y = offsetY + (maxLat - point.lat) * scale;
+        const x = padding.left + (point.distanceKm / maxDistance) * plotWidth;
+        const y = padding.top + ((maxElevation - point.elevation) / elevationRange) * plotHeight;
         return `${x.toFixed(1)},${y.toFixed(1)}`;
       };
-      const routeLines = routes.map((route) => {
-        const linePoints = route.points.map(project).join(" ");
-        return `<polyline points="${linePoints}" fill="none" stroke="${route.color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>`;
+
+      const linePoints = profile.map(project).join(" ");
+      const areaPoints = `${padding.left},${height - padding.bottom} ${linePoints} ${width - padding.right},${height - padding.bottom}`;
+      const segmentLines = routes.map((route, routeIndex) => {
+        const segment = route.profilePoints.map((point) => ({ distanceKm: profile.find((p, i) => p.elevation === point.elevation && Math.abs((p.distanceKm % Math.max(route.distanceKm, 0.001)) - point.distanceKm) < 0.01) ? point.distanceKm : point.distanceKm, elevation: point.elevation }));
+        const routeOffset = routes.slice(0, routeIndex).reduce((sum, item) => sum + item.distanceKm, 0);
+        const points = route.profilePoints.map((point) => project({ distanceKm: routeOffset + point.distanceKm, elevation: point.elevation })).join(" ");
+        return `<polyline points="${points}" fill="none" stroke="${route.color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></polyline>`;
       }).join("");
-      const first = routes[0].points[0];
-      const lastRoute = routes[routes.length - 1];
-      const last = lastRoute.points[lastRoute.points.length - 1];
-      const start = project(first).split(",");
-      const finish = project(last).split(",");
 
       return `
-        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Kartenvorschau">
-          <rect x="0" y="0" width="${width}" height="${height}" fill="#eef6ff"></rect>
-          <path d="M0 ${height * 0.7} C${width * 0.25} ${height * 0.58}, ${width * 0.38} ${height * 0.82}, ${width * 0.58} ${height * 0.66} S${width * 0.82} ${height * 0.42}, ${width} ${height * 0.56}" fill="none" stroke="#d8e7f7" stroke-width="22" stroke-linecap="round"></path>
-          ${routeLines}
-          <circle cx="${start[0]}" cy="${start[1]}" r="5" fill="#17202a"></circle>
-          <circle cx="${finish[0]}" cy="${finish[1]}" r="5" fill="#ffffff" stroke="#17202a" stroke-width="3"></circle>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Mini-Höhenprofil für Tag ${day.day}">
+          <rect x="0" y="0" width="${width}" height="${height}" fill="#f8fafc"></rect>
+          <line x1="${padding.left}" y1="${height - padding.bottom}" x2="${width - padding.right}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line>
+          <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="#94a3b8" stroke-width="1"></line>
+          <polygon points="${areaPoints}" fill="#0f172a" opacity="0.08"></polygon>
+          ${segmentLines}
+          <text x="${padding.left - 6}" y="${padding.top + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(maxElevation)} m</text>
+          <text x="${padding.left - 6}" y="${height - padding.bottom + 4}" text-anchor="end" font-size="10" fill="#475569">${Math.round(minElevation)} m</text>
+          <text x="${padding.left}" y="${height - 8}" text-anchor="start" font-size="10" fill="#475569">0 km</text>
+          <text x="${width - padding.right}" y="${height - 8}" text-anchor="end" font-size="10" fill="#475569">${maxDistance.toFixed(1)} km</text>
         </svg>
       `;
+    }
+
+    function initializeDayPreviewMaps() {
+      dayPreviewMaps.forEach((previewMap) => previewMap.remove());
+      dayPreviewMaps = [];
+
+      timePlan.forEach((day) => {
+        const routes = getRoutesForDay(day);
+        if (!routes.length) return;
+
+        const container = document.getElementById(`day-preview-map-${day.day}`);
+        if (!container) return;
+
+        const previewMap = L.map(container, {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          keyboard: false,
+          tap: false
+        });
+
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap-Mitwirkende"
+        }).addTo(previewMap);
+
+        const boundsGroup = L.featureGroup().addTo(previewMap);
+        routes.forEach((route) => {
+          L.polyline(route.latLngs, {
+            color: route.color,
+            weight: 4,
+            opacity: 1,
+            lineCap: "round",
+            lineJoin: "round"
+          }).addTo(boundsGroup);
+        });
+
+        const firstRoute = routes[0];
+        const lastRoute = routes[routes.length - 1];
+        L.circleMarker(firstRoute.latLngs[0], { radius: 4, color: firstRoute.color, fillColor: firstRoute.color, fillOpacity: 1, weight: 2 }).addTo(boundsGroup);
+        L.circleMarker(lastRoute.latLngs[lastRoute.latLngs.length - 1], { radius: 4, color: lastRoute.color, fillColor: "#ffffff", fillOpacity: 1, weight: 2 }).addTo(boundsGroup);
+
+        const bounds = boundsGroup.getBounds();
+        if (bounds.isValid()) previewMap.fitBounds(bounds, { padding: [16, 16], maxZoom: 14 });
+        setTimeout(() => previewMap.invalidateSize(), 0);
+        dayPreviewMaps.push(previewMap);
+      });
     }
 
     function renderTimePlan() {
@@ -750,7 +836,8 @@
         const routeLinks = routes.length
           ? `${day.routeIds.length > 1 ? `<a class="secondary-link" href="${escapeHtml(dayRoutesUrl)}">Alle Routen dieses Tages anzeigen</a>` : ""}${routes.map((route) => `<a href="?route=${encodeURIComponent(route.id)}">${escapeHtml(route.name)}</a>`).join("")}`
           : `<span class="hint">Noch keine GPX-Route verknüpft.</span>`;
-        const previewMap = renderDayPreviewMap(routes);
+        const previewMap = renderDayPreviewMap(day, routes);
+        const miniElevation = renderDayMiniElevation(day, routes);
         const hutLink = day.hutWebsite
           ? `<a href="${escapeHtml(day.hutWebsite)}" target="_blank" rel="noopener noreferrer">${escapeHtml(day.hut)}</a>`
           : escapeHtml(day.hut);
@@ -774,7 +861,10 @@
                   <div class="metric-box"><div class="label">Gehzeit</div><strong>${formatHours(summary.hikingTimeHours)}</strong></div>
                 </div>
               </div>
-              <div class="day-preview-map" aria-label="Kartenvorschau für Tag ${day.day}">${previewMap}</div>
+              <div class="day-visuals">
+                <div class="day-preview-map" aria-label="Kartenvorschau für Tag ${day.day}">${previewMap}</div>
+                <div class="day-mini-elevation" aria-label="Mini-Höhenprofil für Tag ${day.day}">${miniElevation}</div>
+              </div>
             </div>
             <div class="day-detail">
               <div>
@@ -798,6 +888,10 @@
           </article>
         `;
       }).join("");
+
+      if (selectedView === "timeplan") {
+        setTimeout(initializeDayPreviewMaps, 0);
+      }
     }
 
     function addHutMarkers() {
