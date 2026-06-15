@@ -334,6 +334,12 @@
       gap: 10px; 
       margin: 12px 0;
     }
+    .day-card.no-gpx .day-grid {
+      display: none;
+    }
+    .day-card.no-gpx .day-card-top {
+      align-items: start;
+    }
     .metric-box { 
       border: 1px solid #eef2f6;
       border-radius: 12px; 
@@ -422,41 +428,6 @@
       font-size: 13px; 
       text-align: center; 
       background: #f8fafc; 
-    }
-    .day-travel-visual {
-      min-height: 190px;
-      border: 1px solid #dde3ea;
-      border-radius: 14px;
-      padding: 16px;
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 10px;
-    }
-    .day-travel-route {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      color: #17202a;
-    }
-    .day-travel-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      background: #17202a;
-      flex: 0 0 auto;
-    }
-    .day-travel-line {
-      height: 2px;
-      background: #cbd5e1;
-      flex: 1 1 auto;
-    }
-    .day-travel-note {
-      color: #667085;
-      line-height: 1.45;
-      font-size: 14px;
     }
     .placeholder-note { 
       color: #b45309; 
@@ -731,24 +702,6 @@
     function renderDayPreviewMap(day, routes) {
       if (!routes.length) return `<div class="day-preview-empty">Keine Vorschau ohne GPX-Verknüpfung</div>`;
       return `<div id="day-preview-map-${day.day}" class="day-preview-map-leaflet" aria-label="Kartenvorschau für Tag ${day.day}"></div>`;
-    }
-
-    function renderDayTravelVisual(day) {
-      const title = day.routeIds.length ? "GPX-Route noch nicht geladen" : "Reisetag ohne GPX-Route";
-      return `
-        <div class="day-travel-visual" aria-label="${escapeHtml(title)}">
-          <div class="day-travel-route">
-            <span class="day-travel-dot" aria-hidden="true"></span>
-            <span class="day-travel-line" aria-hidden="true"></span>
-            <span class="day-travel-dot" aria-hidden="true"></span>
-          </div>
-          <div>
-            <div class="label">${escapeHtml(title)}</div>
-            <div class="value" style="font-size:16px;">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
-          </div>
-          <div class="day-travel-note">Für diesen Tag werden bewusst keine Karten- und Höhenprofil-Kacheln angezeigt, weil keine GPX-Strecke verknüpft ist.</div>
-        </div>
-      `;
     }
 
     function renderDayMiniElevation(day, routes) {
