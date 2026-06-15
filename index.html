@@ -438,12 +438,7 @@
       margin: 0 0 6px;
       font-size: 20px;
     }
-    .timeline-overview {
-      display: none;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
+    .timeline-overview { display: none; }
     .timeline-day {
       border: 1px solid #dde3ea;
       border-radius: 16px;
@@ -661,14 +656,10 @@
       }
     }
     @media (max-width: 950px) {
-      .timeline-overview {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .timeline-overview { display: none; }
     }
     @media (max-width: 650px) {
-      .timeline-overview {
-        grid-template-columns: 1fr;
-      }
+      .timeline-overview { display: none; }
       .timeline-day {
         min-height: auto;
       }
@@ -743,7 +734,7 @@
     .timeplan-overview .real-calendar,
     .timeplan-overview .mini-calendar {
       width: 100%;
-      max-width: none;
+      
     }
 
     .timeplan-overview .calendar-grid {
@@ -755,6 +746,40 @@
     .timeplan-overview .calendar-day,
     .timeplan-overview .calendar-cell,
     .timeplan-overview .month-day {
+      min-height: 118px;
+    }
+
+  
+    /* Full-width month calendar */
+    .timeplan-overview {
+      width: 100%;
+    }
+
+    .timeplan-overview .calendar-wrap,
+    .timeplan-overview .calendar-overview,
+    .timeplan-overview .month-calendar,
+    .timeplan-overview .mini-calendar,
+    .timeplan-overview .real-calendar,
+    .timeplan-overview .september-calendar {
+      width: 100% !important;
+      
+    }
+
+    .timeplan-overview .calendar-grid,
+    .timeplan-overview .month-grid,
+    .timeplan-overview .mini-calendar-grid,
+    .timeplan-overview .real-calendar-grid {
+      width: 100% !important;
+      max-width: none !important;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    }
+
+    .timeplan-overview .calendar-day,
+    .timeplan-overview .calendar-cell,
+    .timeplan-overview .month-day,
+    .timeplan-overview .mini-calendar-day,
+    .timeplan-overview .real-calendar-day {
       min-height: 118px;
     }
 
@@ -1298,28 +1323,7 @@
         <p class="hint">Kompakte Übersicht vom Reisebeginn bis zur Abreise. September 2026 wird als echter Monatskalender angezeigt; Etappen und Reisetage sind visuell getrennt.</p>
         <div class="calendar-overview">
           ${renderSeptemberCalendar()}
-          <div class="timeline-overview">
-            ${timePlan.map((day) => {
-              const routes = getRoutesForDay(day);
-              const hasRoutes = routes.length > 0;
-              const summary = summarizeRoutes(routes);
-              const dayColor = hasRoutes ? routes[0].color : "#64748b";
-              const metrics = hasRoutes
-                ? `<div class="timeline-day-metrics">${summary.distanceKm.toFixed(1)} km · ${formatHours(summary.hikingTimeHours)}</div>`
-                : `<div class="timeline-day-metrics">Reisetag</div>`;
-              return `
-                <a class="timeline-day ${hasRoutes ? "is-hike" : "is-travel"}" href="#day-${day.day}" style="--day-color:${escapeHtml(dayColor)}">
-                  <div class="timeline-day-number">Tag ${day.day}</div>
-                  <div class="timeline-day-type">${hasRoutes ? "Etappe" : "Reisetag"}</div>
-                  <div class="timeline-day-title">${escapeHtml(day.title)}</div>
-                  <div class="timeline-day-date">${escapeHtml(day.date)}</div>
-                  <div class="timeline-day-route">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
-                  ${metrics}
-                </a>
-              `;
-            }).join("")}
-          </div>
-        </div>
+</div>
       `;
     }
 
