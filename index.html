@@ -1342,7 +1342,7 @@
     function renderTimePlanOverview() {
       timePlanOverviewEl.innerHTML = `
         <h3>Übersicht über alle Tage</h3>
-        <p class="hint">Kompakte Übersicht vom Reisebeginn bis zur Abreise. September 2026 wird als echter Monatskalender angezeigt; Etappen und Reisetage sind visuell getrennt.</p>
+        <p class="hint">Übersicht über die Reise- und Wandertage.</p>
         <div class="calendar-overview">
           ${renderSeptemberCalendar()}
 </div>
@@ -1453,7 +1453,7 @@
               </div>
               <div class="label">Reisetag ohne GPX-Route</div>
               <div class="travel-day-title">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
-              <div>Für diesen Tag werden keine Strecken-, Karten- oder Höhenprofil-Kacheln angezeigt.</div>
+              <div>Keine GPX Daten vorhanden.</div>
             </div>`;
         const metricsGrid = hasRoutes
           ? `<div class="day-grid">
