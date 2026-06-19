@@ -1610,7 +1610,6 @@
     
       routeLayer.on("mouseout", () => {
         routeLayer.setStyle({ weight: selectedRouteIds.length ? 7 : 6 });
-        if (!selectedRouteIds.length) clearHoveredRoute();
       });
     
       const startMarker = L.circleMarker(latLngs[0], {
