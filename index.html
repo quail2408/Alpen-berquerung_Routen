@@ -817,6 +817,7 @@
       <div class="controls">
         <a id="allRoutesLink" class="route-link" href="./">Alle Routen</a>
         <a id="timePlanLink" class="nav-link" href="?view=timeplan">Zeitplan</a>
+        <button id="togglePaletteBtn">Palette: Alpin</button>
         <button id="toggleHutsBtn">Hütten ausblenden</button>
       </div>
     </header>
@@ -868,6 +869,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const toggleHutsBtn = document.getElementById("toggleHutsBtn");
+    const togglePaletteBtn = document.getElementById("togglePaletteBtn");
     const allRoutesLink = document.getElementById("allRoutesLink");
     const timePlanLink = document.getElementById("timePlanLink");
     const timePlanTotalEl = document.getElementById("timePlanTotal");
@@ -884,17 +886,26 @@
     const heightProfileEl = document.getElementById("heightProfile");
     const statusEl = document.getElementById("status");
 
-    // const routeColors = ["#e11d48", "#2563eb", "#16a34a", "#f97316", "#7c3aed", "#0891b2", "#be123c", "#4d7c0f"];
-    const routeColors = [
-      "#D32F2F", // red
-      "#1976D2", // blue
-      "#388E3C", // green
-      "#F57C00", // orange
-      "#7B1FA2", // violet
-      "#0097A7", // cyan
-      "#5D4037", // brown
-      "#455A64"  // grey-blue
+    const routeColorPalettes = [
+      {
+        name: "Alpin",
+        colors: ["#d32f2f", "#1976d2", "#388e3c", "#f57c00", "#7b1fa2", "#0097a7", "#5d4037", "#455a64"]
+      },
+      {
+        name: "Natur",
+        colors: ["#1b5e20", "#1565c0", "#ef6c00", "#6a1b9a", "#00838f", "#c62828", "#827717", "#37474f"]
+      },
+      {
+        name: "Kontrast",
+        colors: ["#0072b2", "#d55e00", "#009e73", "#cc79a7", "#f0e442", "#56b4e9", "#e69f00", "#000000"]
+      },
+      {
+        name: "Erdtöne",
+        colors: ["#7f4f24", "#2d6a4f", "#bc6c25", "#31572c", "#6d597a", "#52796f", "#9a031e", "#3d405b"]
+      }
     ];
+    let activePaletteIndex = 0;
+    let routeColors = routeColorPalettes[activePaletteIndex].colors;
     let allRouteDefinitions = [];
     let loadedRoutes = [];
     let activeRouteIds = new Set();
@@ -979,6 +990,50 @@
       if (hutsVisible) { hutLayerGroup.addTo(map); toggleHutsBtn.textContent = "Hütten ausblenden"; }
       else { map.removeLayer(hutLayerGroup); toggleHutsBtn.textContent = "Hütten einblenden"; }
     });
+
+    togglePaletteBtn.addEventListener("click", () => {
+      activePaletteIndex = (activePaletteIndex + 1) % routeColorPalettes.length;
+      applyRouteColorPalette();
+    });
+
+    function applyRouteColorPalette() {
+      const palette = routeColorPalettes[activePaletteIndex];
+      routeColors = palette.colors;
+      togglePaletteBtn.textContent = `Palette: ${palette.name}`;
+
+      loadedRoutes.forEach((route, routeIndex) => {
+        route.color = routeColors[routeIndex % routeColors.length];
+        updateRouteLayerColors(route);
+      });
+
+      updateRouteOverview();
+      renderTimePlan();
+
+      if (currentlyDisplayedRoute) {
+        showHoveredRoute(currentlyDisplayedRoute);
+      } else if (selectedRouteIds.length > 1) {
+        showRouteGroupSummary(loadedRoutes);
+      }
+    }
+
+    function updateRouteLayerColors(route) {
+      const [routeLayer, startMarker, finishMarker] = route.layers;
+
+      if (routeLayer && routeLayer.setStyle) {
+        routeLayer.setStyle({ color: route.color });
+        routeLayer.setPopupContent(
+          `${escapeHtml(route.name)}<br>${route.distanceKm.toFixed(2)} km<br>${Math.round(route.elevationGainM)} m hoch<br>${Math.round(route.elevationLossM)} m runter<br>${formatHours(route.hikingTimeHours)}<br><a href="?route=${encodeURIComponent(route.id)}">Nur diese Route anzeigen</a>`
+        );
+      }
+
+      if (startMarker && startMarker.setStyle) {
+        startMarker.setStyle({ color: route.color, fillColor: route.color });
+      }
+
+      if (finishMarker && finishMarker.setStyle) {
+        finishMarker.setStyle({ color: route.color });
+      }
+    }
 
     async function loadRoutesFromManifest() {
       try {
@@ -1352,7 +1407,7 @@
     function renderTimePlanOverview() {
       timePlanOverviewEl.innerHTML = `
         <h3>Übersicht über alle Tage</h3>
-        <p class="hint">Übersicht über die Reise- und Wandertage.</p>
+        <p class="hint">Kompakte Übersicht vom Reisebeginn bis zur Abreise. September 2026 wird als echter Monatskalender angezeigt; Etappen und Reisetage sind visuell getrennt.</p>
         <div class="calendar-overview">
           ${renderSeptemberCalendar()}
 </div>
@@ -1463,7 +1518,7 @@
               </div>
               <div class="label">Reisetag ohne GPX-Route</div>
               <div class="travel-day-title">${escapeHtml(day.start)} → ${escapeHtml(day.end)}</div>
-              <div>Keine GPX Daten vorhanden.</div>
+              <div>Für diesen Tag werden keine Strecken-, Karten- oder Höhenprofil-Kacheln angezeigt.</div>
             </div>`;
         const metricsGrid = hasRoutes
           ? `<div class="day-grid">
